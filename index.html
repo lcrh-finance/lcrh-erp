@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LCRH Financial Management System v3.0</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --navy:#1a2e5a;--navy2:#243d78;--teal:#0d7a6e;--teal2:#0f9485;
+  --red:#c0392b;--orange:#e67e22;--green:#27ae60;--purple:#6c3483;
+  --white:#fff;--bg:#f0f3f8;--sw:240px;
+  --g100:#f7f8fc;--g200:#eef0f5;--g300:#d6dae6;--g400:#9aa5be;
+  --g500:#6b7a9a;--g600:#4a5568;--g700:#2d3748;
+  --sh:0 2px 10px rgba(0,0,0,.07);--r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;color:var(--g700);background:var(--bg)}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+
+/* ── AUTH ── */
+#auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 50%,var(--teal) 100%)}
+.auth-card{background:var(--white);border-radius:14px;padding:40px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo .logo-icon{width:60px;height:60px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px;color:var(--white)}
+.auth-logo h1{font-size:18px;font-weight:700;color:var(--navy)}
+.auth-logo p{font-size:12px;color:var(--g500);margin-top:3px}
+.cfg-notice{background:#fffbea;border:1px solid #f6d860;border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#7d6608}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--g600);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:9px 12px;border:1.5px solid var(--g300);border-radius:6px;font-size:13px;outline:none;transition:border .2s;background:var(--white)}
+.form-group input:focus,.form-group select:focus{border-color:var(--navy)}
+.auth-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--g100);border-radius:7px;padding:4px}
+.auth-tab{flex:1;padding:8px;text-align:center;border-radius:5px;font-size:13px;font-weight:500;color:var(--g500);cursor:pointer;transition:all .2s;border:none;background:none}
+.auth-tab.active{background:var(--white);color:var(--navy);box-shadow:var(--sh)}
+.btn{padding:9px 18px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-primary:hover{background:var(--navy2)}
+.btn-success{background:var(--green);color:var(--white)}
+.btn-danger{background:var(--red);color:var(--white)}
+.btn-teal{background:var(--teal);color:var(--white)}
+.btn-teal:hover{background:var(--teal2)}
+.btn-outline{background:transparent;border:1.5px solid var(--g300);color:var(--g600)}
+.btn-outline:hover{background:var(--g100)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-full{width:100%;justify-content:center;padding:11px}
+.btn-icon{padding:6px 8px;font-size:14px}
+#auth-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* ── APP ── */
+#app{display:none;min-height:100vh;flex-direction:column}
+.topbar{background:var(--navy);color:var(--white);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{font-weight:700;font-size:16px;letter-spacing:.3px}
+.topbar-sub{font-size:11px;opacity:.7}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-chip{background:rgba(255,255,255,.12);border-radius:20px;padding:5px 12px;font-size:12px;display:flex;align-items:center;gap:6px}
+.layout{display:flex;height:calc(100vh - 52px);overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);background:var(--white);border-right:1px solid var(--g200);overflow-y:auto;flex-shrink:0;padding:10px 0}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--g300);border-radius:4px}
+.ns{padding:18px 16px 6px;font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--g400);text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--g600);cursor:pointer;border-radius:0;transition:all .15s;margin:1px 6px;border-radius:6px}
+.ni:hover{background:var(--g100);color:var(--navy)}
+.ni.active{background:var(--navy);color:var(--white)}
+.ni .icon{width:20px;text-align:center;font-size:15px;flex-shrink:0}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:0}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-thumb{background:var(--g300);border-radius:3px}
+.page{display:none;padding:20px}
+.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.page-title{font-size:18px;font-weight:700;color:var(--navy)}
+.page-sub{font-size:12px;color:var(--g500);margin-top:2px}
+
+/* ── CARDS ── */
+.card{background:var(--white);border-radius:var(--r);padding:20px;box-shadow:var(--sh)}
+.card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--g200)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--white);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);border-left:4px solid var(--navy)}
+.stat-card.green{border-color:var(--green)}
+.stat-card.teal{border-color:var(--teal)}
+.stat-card.orange{border-color:var(--orange)}
+.stat-card.red{border-color:var(--red)}
+.stat-card.purple{border-color:var(--purple)}
+.stat-label{font-size:11px;color:var(--g500);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700;color:var(--g700)}
+.stat-sub{font-size:11px;color:var(--g400);margin-top:3px}
+
+/* ── FORMS ── */
+.form-grid{display:grid;gap:14px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fgr{grid-template-columns:1fr}
+label{display:block;font-size:12px;font-weight:600;color:var(--g600);margin-bottom:5px}
+input,select,textarea{width:100%;padding:8px 11px;border:1.5px solid var(--g300);border-radius:6px;font-size:13px;outline:none;transition:border .2s;font-family:inherit;background:var(--white);color:var(--g700)}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,46,90,.08)}
+textarea{resize:vertical;min-height:60px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--g200)}
+.form-section{background:var(--white);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
+
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto;border-radius:var(--r);box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse;background:var(--white)}
+thead th{background:var(--navy);color:var(--white);padding:9px 12px;text-align:left;font-weight:600;font-size:12px;white-space:nowrap}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--g200);font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--g100)}
+.tfoot-row td{background:var(--g100);font-weight:700;border-top:2px solid var(--g300)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:#d4edda;color:#155724}
+.badge-orange{background:#fff3cd;color:#856404}
+.badge-red{background:#f8d7da;color:#721c24}
+.badge-blue{background:#cce5ff;color:#004085}
+.badge-gray{background:var(--g200);color:var(--g600)}
+.badge-teal{background:#d0f0ed;color:#0a5c53}
+.text-right{text-align:right}
+.text-center{text-align:center}
+.text-muted{color:var(--g400);font-style:italic}
+.amount{font-family:'Courier New',monospace;font-weight:600;text-align:right}
+.amount-pos{color:var(--teal)}
+.amount-neg{color:var(--red)}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar-right{margin-left:auto;display:flex;gap:8px}
+input[type=search],.search-box{padding:8px 12px;border:1.5px solid var(--g300);border-radius:6px;font-size:13px;outline:none;width:220px}
+input[type=search]:focus,.search-box:focus{border-color:var(--navy)}
+.filter-select{padding:7px 10px;border:1.5px solid var(--g300);border-radius:6px;font-size:12px;color:var(--g600);outline:none;background:var(--white)}
+.filter-select:focus{border-color:var(--navy)}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:12px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-lg{max-width:800px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--g200);position:sticky;top:0;background:var(--white);z-index:1}
+.modal-title{font-size:15px;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:20px;color:var(--g500);cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--g100);color:var(--g700)}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--g200);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── ALERTS ── */
+.alert{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.alert-info{background:#e8f4f8;color:#0c5464;border-left:4px solid var(--teal)}
+.alert-warn{background:#fffaeb;color:#7d5a03;border-left:4px solid var(--orange)}
+.alert-err{background:#fde8e8;color:#721c24;border-left:4px solid var(--red)}
+.alert-ok{background:#e6f4ea;color:#155724;border-left:4px solid var(--green)}
+
+/* ── SESSION TIMEOUT ── */
+#session-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
+#session-modal.open{display:flex}
+.session-box{background:var(--white);border-radius:12px;padding:36px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.session-box h3{font-size:17px;color:var(--navy);margin:12px 0 8px}
+.session-box p{font-size:13px;color:var(--g500);line-height:1.6;margin-bottom:6px}
+.session-cd{font-size:28px;font-weight:700;color:var(--red);margin:10px 0}
+#session-stay-btn{width:100%;padding:12px;background:var(--navy);color:var(--white);border:none;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+#session-stay-btn:hover{background:var(--navy2)}
+
+/* ── REPORT / PRINT ── */
+.report-header{text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--navy)}
+.report-header h2{font-size:16px;color:var(--navy);font-weight:700}
+.report-header p{font-size:12px;color:var(--g500);margin-top:3px}
+.report-section{margin-bottom:24px}
+.report-section-title{font-size:13px;font-weight:700;color:var(--navy);background:var(--g100);padding:7px 12px;border-left:3px solid var(--navy);margin-bottom:0}
+.report-row{display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--g200);font-size:13px}
+.report-row.indent{padding-left:28px;font-size:12px;color:var(--g600)}
+.report-row.subtotal{font-weight:700;background:var(--g100)}
+.report-row.total{font-weight:700;background:var(--navy);color:var(--white);font-size:14px}
+.report-row.surplus{font-weight:700;color:var(--teal);background:#e8f8f5}
+.report-row.deficit{font-weight:700;color:var(--red);background:#fde8e8}
+.dual-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.print-only{display:none}
+
+@media print{
+  body{background:white;font-size:11px}
+  .sidebar,.topbar,.no-print,.toolbar,.form-section,.page-header .btn{display:none!important}
+  .layout{height:auto;overflow:visible}
+  .content{overflow:visible;padding:0}
+  .page{display:block!important;padding:0}
+  .page:not(.active){display:none!important}
+  .print-only{display:block}
+  .table-wrap{box-shadow:none}
+  table{font-size:11px}
+  thead th{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .card,.form-section{box-shadow:none;border:1px solid #ddd}
+  .report-header{border-bottom:2px solid #000}
+  @page{margin:15mm}
+}
+
+/* ── MISC ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--g400)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:13px}
+.divider{border:none;border-top:1px solid var(--g200);margin:16px 0}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:var(--g200);color:var(--g600)}
+.spin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row td{text-align:center;color:var(--g400);font-style:italic;padding:20px}
+.fy-badge{background:var(--navy);color:var(--white);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.req{color:var(--red)}
+</style>
+</head>
+<body>
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div id="auth-screen">
+<div class="auth-card">
+  <div class="auth-logo">
+    <div class="logo-icon">🏥</div>
+    <h1>LCRH Financial Management System</h1>
+    <p>Lodwar County Referral Hospital · Turkana County Government · v3.0</p>
+  </div>
+  <div id="cfg-section">
+    <div class="cfg-notice">⚙️ <strong>First time setup.</strong> Enter your Firebase credentials to connect the database.</div>
+    <div class="form-group"><label>API Key <span class="req">*</span></label><input id="cfg-key" placeholder="AIzaSy..."/></div>
+    <div class="form-group"><label>Auth Domain <span class="req">*</span></label><input id="cfg-domain" placeholder="project.firebaseapp.com"/></div>
+    <div class="form-group"><label>Project ID <span class="req">*</span></label><input id="cfg-pid" placeholder="your-project-id"/></div>
+    <div class="form-group"><label>App ID <span class="req">*</span></label><input id="cfg-appid" placeholder="1:xxx:web:xxx"/></div>
+    <button class="btn btn-primary btn-full" onclick="connectFirebase()">Connect to Firebase →</button>
+    <div id="cfg-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+  </div>
+  <div id="signin-section" style="display:none">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="showTab('register')">Register</button>
+    </div>
+    <div id="tab-signin">
+      <div class="form-group"><label>Email</label><input id="si-email" type="email" placeholder="you@email.com"/></div>
+      <div class="form-group"><label>Password</label><input id="si-pass" type="password" placeholder="••••••••"/></div>
+      <button class="btn btn-primary btn-full" onclick="doSignIn()">Sign In</button>
+    </div>
+    <div id="tab-register" style="display:none">
+      <div class="form-group"><label>Full Name</label><input id="reg-name" placeholder="Your full name"/></div>
+      <div class="form-group"><label>Role</label>
+        <select id="reg-role">
+          <option value="Senior Accountant">Senior Accountant</option>
+          <option value="Accountant">Accountant</option>
+          <option value="Finance Officer">Finance Officer</option>
+          <option value="Accounts Assistant">Accounts Assistant</option>
+          <option value="Administrator">Administrator</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Email</label><input id="reg-email" type="email" placeholder="you@email.com"/></div>
+      <div class="form-group"><label>Password</label><input id="reg-pass" type="password" placeholder="Min 6 characters"/></div>
+      <button class="btn btn-success btn-full" onclick="doRegister()">Create Account</button>
+    </div>
+    <div id="auth-err" style="color:var(--red);font-size:12px;margin-top:10px;display:none"></div>
+    <button class="btn btn-outline btn-full" style="margin-top:10px;font-size:11px" onclick="resetCfg()">⚙️ Change Firebase Config</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="app">
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span style="font-size:22px">🏥</span>
+    <div>
+      <div class="topbar-logo">LCRH Finance</div>
+      <div class="topbar-sub">Turkana County · Health</div>
+    </div>
+    <span id="fy-display" class="fy-badge">FY 2026/2027</span>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <span>👤</span>
+      <span id="user-name-display">—</span>
+      <span id="user-role-display" style="opacity:.7;font-size:11px"></span>
+    </div>
+    <button class="btn btn-outline btn-sm" style="color:var(--white);border-color:rgba(255,255,255,.3)" onclick="doLogout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="ns">Overview</div>
+  <div class="ni active" onclick="nav('dashboard')" id="nav-dashboard"><span class="icon">📊</span> Dashboard</div>
+  <div class="ns">Transactions</div>
+  <div class="ni" onclick="nav('cashbook')" id="nav-cashbook"><span class="icon">🏦</span> Cash Book (ACB)</div>
+  <div class="ni" onclick="nav('votebook')" id="nav-votebook"><span class="icon">🗳️</span> Vote Book</div>
+  <div class="ni" onclick="nav('accruals')" id="nav-accruals"><span class="icon">📋</span> Accrual Journal</div>
+  <div class="ni" onclick="nav('revenue')" id="nav-revenue"><span class="icon">💰</span> Revenue</div>
+  <div class="ni" onclick="nav('claims')" id="nav-claims"><span class="icon">🧾</span> Insurance Claims</div>
+  <div class="ns">Ledgers</div>
+  <div class="ni" onclick="nav('svledger')" id="nav-svledger"><span class="icon">📑</span> Sub-Vote Ledger</div>
+  <div class="ni" onclick="nav('glledger')" id="nav-glledger"><span class="icon">📚</span> General Ledger</div>
+  <div class="ns">Reports</div>
+  <div class="ni" onclick="nav('trialbal')" id="nav-trialbal"><span class="icon">⚖️</span> Trial Balance</div>
+  <div class="ni" onclick="nav('revreport')" id="nav-revreport"><span class="icon">📈</span> Revenue Report</div>
+  <div class="ni" onclick="nav('finstat')" id="nav-finstat"><span class="icon">📄</span> Financial Statements</div>
+  <div class="ns">System</div>
+  <div class="ni" onclick="nav('votes')" id="nav-votes"><span class="icon">⚙️</span> Vote Management</div>
+  <div class="ni" onclick="nav('settings')" id="nav-settings"><span class="icon">🔧</span> Settings</div>
+  <div class="ni" onclick="nav('auditlog')" id="nav-auditlog"><span class="icon">🔍</span> Audit Log</div>
+</div>
+<!-- / SIDEBAR -->
+
+<!-- CONTENT PAGES -->
+<div class="content">
+<!-- ── DASHBOARD ── -->
+<div id="page-dashboard" class="page active">
+<div class="page-header">
+  <div><div class="page-title">📊 Dashboard</div><div class="page-sub">Financial overview — FY 2026/2027</div></div>
+  <button class="btn btn-outline btn-sm no-print" onclick="loadDashboard()">↻ Refresh</button>
+</div>
+<div class="stats-grid">
+  <div class="stat-card green"><div class="stat-label">Receipts (Month)</div><div class="stat-value" id="dash-receipts">KES 0</div><div class="stat-sub">Current month cash in</div></div>
+  <div class="stat-card red"><div class="stat-label">Payments (Month)</div><div class="stat-value" id="dash-payments">KES 0</div><div class="stat-sub">Current month cash out</div></div>
+  <div class="stat-card teal"><div class="stat-label">Net Cash Position</div><div class="stat-value" id="dash-net">KES 0</div><div class="stat-sub">All accounts combined</div></div>
+  <div class="stat-card orange"><div class="stat-label">AIE Utilisation</div><div class="stat-value" id="dash-aie">0%</div><div class="stat-sub" id="dash-aie-sub">of KES 0</div></div>
+  <div class="stat-card purple"><div class="stat-label">Accrued Payables</div><div class="stat-value" id="dash-payables">KES 0</div><div class="stat-sub">Posted accruals</div></div>
+  <div class="stat-card"><div class="stat-label">Pending Claims</div><div class="stat-value" id="dash-claims">KES 0</div><div class="stat-sub" id="dash-claims-sub">Insurance submitted</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="card">
+    <div class="card-title">Recent Cash Book Entries</div>
+    <table><thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Type</th><th class="text-right">Amount (KES)</th></tr></thead>
+    <tbody id="dash-recent-cb"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody></table>
+  </div>
+  <div class="card">
+    <div class="card-title">AIE Budget vs Utilisation — Top Votes</div>
+    <table><thead><tr><th>Vote Item</th><th class="text-right">Budget</th><th class="text-right">Spent</th><th class="text-right">% Used</th></tr></thead>
+    <tbody id="dash-votes"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+  </div>
+</div>
+</div>
+
+<!-- ── CASH BOOK ── -->
+<div id="page-cashbook" class="page">
+<div class="page-header no-print">
+  <div><div class="page-title">🏦 Analytical Cash Book</div><div class="page-sub">All receipts and payments</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm" onclick="openModal('cb-modal')">+ New Entry</button>
+    <button class="btn btn-outline btn-sm" onclick="printCashBook()">🖨 Print Cash Book</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV('cb')">⬇ CSV</button>
+  </div>
+</div>
+<div class="print-only" id="cb-print-header" style="display:none">
+  <div class="report-header">
+    <h2 id="cb-ph-title">LCRH — Analytical Cash Book</h2>
+    <p id="cb-ph-sub">For the period ended</p>
+  </div>
+</div>
+<div class="toolbar no-print">
+  <input type="search" placeholder="Search reference, description…" oninput="filterCB(this.value)" style="width:240px"/>
+  <select class="filter-select" id="cb-filter-bank" onchange="filterCBBank(this.value)">
+    <option value="">All Accounts</option>
+    <option>KCB Main Account</option><option>FIF Account</option>
+    <option>NHIF/SHA Account</option><option>Petty Cash</option>
+  </select>
+  <select class="filter-select" id="cb-filter-type" onchange="filterCBType(this.value)">
+    <option value="">All Types</option><option value="Receipt">Receipts</option><option value="Payment">Payments</option>
+  </select>
+  <select class="filter-select" id="cb-filter-month" onchange="filterCBMonth(this.value)">
+    <option value="">All Months</option>
+    <option value="2026-07">Jul 2026</option><option value="2026-08">Aug 2026</option>
+    <option value="2026-09">Sep 2026</option><option value="2026-10">Oct 2026</option>
+    <option value="2026-11">Nov 2026</option><option value="2026-12">Dec 2026</option>
+    <option value="2027-01">Jan 2027</option><option value="2027-02">Feb 2027</option>
+    <option value="2027-03">Mar 2027</option><option value="2027-04">Apr 2027</option>
+    <option value="2027-05">May 2027</option><option value="2027-06">Jun 2027</option>
+  </select>
+</div>
+<div class="table-wrap">
+<table id="cb-table">
+<thead><tr>
+  <th>Date</th><th>Reference</th><th>Type</th><th>Description</th>
+  <th>IFMIS Code</th><th>Vote / Category</th><th>Bank / Fund</th>
+  <th>Cheque/PV</th><th>Payee / Payer</th>
+  <th class="text-right">Receipts (Dr)</th><th class="text-right">Payments (Cr)</th>
+  <th class="text-right">Balance</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="cb-body"><tr class="loading-row"><td colspan="13">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="9">PERIOD TOTALS</td>
+  <td class="amount text-right" id="cb-total-dr">0.00</td>
+  <td class="amount text-right" id="cb-total-cr">0.00</td>
+  <td class="amount text-right" id="cb-balance">0.00</td>
+  <td class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── VOTE BOOK ── -->
+<div id="page-votebook" class="page">
+<div class="page-header">
+  <div><div class="page-title">🗳️ Vote Book</div><div class="page-sub">AIE expenditure tracking</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm" onclick="openModal('ve-modal')">+ Record Expenditure</button>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV('ve')">⬇ CSV</button>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card"><div class="stat-label">Total AIE Budget</div><div class="stat-value" id="vb-budget">KES 0</div></div>
+  <div class="stat-card orange"><div class="stat-label">Committed</div><div class="stat-value" id="vb-committed">KES 0</div></div>
+  <div class="stat-card purple"><div class="stat-label">Accrued</div><div class="stat-value" id="vb-accrued">KES 0</div></div>
+  <div class="stat-card green"><div class="stat-label">Paid</div><div class="stat-value" id="vb-paid">KES 0</div></div>
+</div>
+<div class="toolbar">
+  <input type="search" placeholder="Search vote, supplier…" oninput="filterVE(this.value)" style="width:240px"/>
+  <select class="filter-select" id="ve-filter-vote" onchange="filterVEVote(this.value)"><option value="">All Votes</option></select>
+  <select class="filter-select" id="ve-filter-status" onchange="filterVEStatus(this.value)">
+    <option value="">All Status</option><option value="Committed">Committed</option>
+    <option value="Accrued">Accrued</option><option value="Paid">Paid</option>
+  </select>
+</div>
+<div class="table-wrap">
+<table id="ve-table">
+<thead><tr>
+  <th>Date</th><th>LPO / Reference</th><th>IFMIS Code</th><th>Vote Item</th>
+  <th>Description</th><th>Supplier / Payee</th><th>Status</th>
+  <th class="text-right">Amount (KES)</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="ve-body"><tr class="loading-row"><td colspan="9">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="7">TOTAL</td>
+  <td class="amount text-right" id="ve-total">0.00</td><td class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── ACCRUAL JOURNAL ── -->
+<div id="page-accruals" class="page">
+<div class="page-header">
+  <div><div class="page-title">📋 Accrual Journal</div><div class="page-sub">IPSAS accrual basis entries</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm" onclick="openModal('acc-modal')">+ New Journal Entry</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV('acc')">⬇ CSV</button>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card red"><div class="stat-label">Total Payables</div><div class="stat-value" id="acc-payables">KES 0</div></div>
+  <div class="stat-card green"><div class="stat-label">Total Receivables</div><div class="stat-value" id="acc-receivables">KES 0</div></div>
+  <div class="stat-card teal"><div class="stat-label">Net Accrual Position</div><div class="stat-value" id="acc-net">KES 0</div></div>
+  <div class="stat-card orange"><div class="stat-label">Draft Entries</div><div class="stat-value" id="acc-drafts">0</div></div>
+</div>
+<div class="toolbar">
+  <select class="filter-select" id="acc-filter-type" onchange="filterAcc(this.value,'type')">
+    <option value="">All Types</option><option value="Payable">Accrued Expense (Payable)</option>
+    <option value="Receivable">Accrued Revenue (Receivable)</option>
+    <option value="Prepayment">Prepayment</option><option value="Depreciation">Depreciation</option>
+    <option value="Adjustment">Adjustment</option>
+  </select>
+  <select class="filter-select" id="acc-filter-status" onchange="filterAcc(this.value,'status')">
+    <option value="">All Status</option><option value="Draft">Draft</option>
+    <option value="Posted">Posted</option><option value="Reversed">Reversed</option>
+  </select>
+  <select class="filter-select" id="acc-filter-period" onchange="filterAcc(this.value,'period')">
+    <option value="">All Periods</option>
+    <option value="2026-07">Jul 2026</option><option value="2026-08">Aug 2026</option>
+    <option value="2026-09">Sep 2026</option><option value="2026-10">Oct 2026</option>
+    <option value="2026-11">Nov 2026</option><option value="2026-12">Dec 2026</option>
+    <option value="2027-01">Jan 2027</option><option value="2027-02">Feb 2027</option>
+    <option value="2027-03">Mar 2027</option><option value="2027-04">Apr 2027</option>
+    <option value="2027-05">May 2027</option><option value="2027-06">Jun 2027</option>
+  </select>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+  <th>Date</th><th>Journal Ref</th><th>Type</th><th>Description</th>
+  <th>Debit Account</th><th>Credit Account</th><th>Period</th>
+  <th>Status</th><th class="text-right">Amount (KES)</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="acc-body"><tr class="loading-row"><td colspan="10">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="8">TOTAL POSTED</td>
+  <td class="amount text-right" id="acc-total">0.00</td><td class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── REVENUE ── -->
+<div id="page-revenue" class="page">
+<div class="page-header">
+  <div><div class="page-title">💰 Revenue</div><div class="page-sub">Own source revenue and grants</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm" onclick="openModal('rev-modal')">+ Record Revenue</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV('rev')">⬇ CSV</button>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card green"><div class="stat-label">OPD Revenue (Month)</div><div class="stat-value" id="rev-opd">KES 0</div></div>
+  <div class="stat-card teal"><div class="stat-label">IPD Revenue (Month)</div><div class="stat-value" id="rev-ipd">KES 0</div></div>
+  <div class="stat-card blue" style="border-color:#0056b3"><div class="stat-label">NHIF/SHA (Month)</div><div class="stat-value" id="rev-nhif">KES 0</div></div>
+  <div class="stat-card orange"><div class="stat-label">Total Revenue (FY)</div><div class="stat-value" id="rev-total">KES 0</div></div>
+</div>
+<div class="toolbar">
+  <input type="search" placeholder="Search receipt, description…" oninput="filterRev(this.value)" style="width:240px"/>
+  <select class="filter-select" id="rev-filter-stream" onchange="filterRevStream(this.value)">
+    <option value="">All Streams</option>
+    <option>OPD</option><option>IPD</option><option>Laboratory</option><option>Pharmacy</option>
+    <option>Radiology</option><option>Maternity</option><option>Theatre</option>
+    <option>NHIF/SHA</option><option>Insurance</option>
+    <option>FIF Allocation</option><option>DANIDA Grant</option>
+    <option>County Transfer</option><option>Other Income</option>
+  </select>
+  <select class="filter-select" id="rev-filter-month" onchange="filterRevMonth(this.value)">
+    <option value="">All Months</option>
+    <option value="2026-07">Jul 2026</option><option value="2026-08">Aug 2026</option>
+    <option value="2026-09">Sep 2026</option><option value="2026-10">Oct 2026</option>
+    <option value="2026-11">Nov 2026</option><option value="2026-12">Dec 2026</option>
+    <option value="2027-01">Jan 2027</option><option value="2027-02">Feb 2027</option>
+    <option value="2027-03">Mar 2027</option><option value="2027-04">Apr 2027</option>
+    <option value="2027-05">May 2027</option><option value="2027-06">Jun 2027</option>
+  </select>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+  <th>Date</th><th>Receipt No.</th><th>Revenue Stream</th>
+  <th>Description</th><th>Payer / Patient Group</th>
+  <th>Collected To</th><th class="text-right">Amount (KES)</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="rev-body"><tr class="loading-row"><td colspan="8">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="6">TOTAL</td>
+  <td class="amount text-right" id="rev-grand-total">0.00</td><td class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── INSURANCE CLAIMS ── -->
+<div id="page-claims" class="page">
+<div class="page-header">
+  <div><div class="page-title">🧾 Insurance Claims</div><div class="page-sub">NHIF/SHA and insurance claim register</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-primary btn-sm" onclick="openModal('clm-modal')">+ Log Claim</button>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV('clm')">⬇ CSV</button>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card orange"><div class="stat-label">Submitted</div><div class="stat-value" id="clm-submitted">KES 0</div></div>
+  <div class="stat-card blue" style="border-color:#0056b3"><div class="stat-label">Approved</div><div class="stat-value" id="clm-approved">KES 0</div></div>
+  <div class="stat-card green"><div class="stat-label">Received</div><div class="stat-value" id="clm-received">KES 0</div></div>
+  <div class="stat-card red"><div class="stat-label">Outstanding</div><div class="stat-value" id="clm-outstanding">KES 0</div></div>
+</div>
+<div class="toolbar">
+  <input type="search" placeholder="Search claim ref, insurer…" oninput="filterClm(this.value)" style="width:240px"/>
+  <select class="filter-select" id="clm-filter-status" onchange="filterClmStatus(this.value)">
+    <option value="">All Status</option><option value="Submitted">Submitted</option>
+    <option value="Approved">Approved</option><option value="Partial">Partial</option>
+    <option value="Paid">Paid</option><option value="Rejected">Rejected</option>
+  </select>
+  <select class="filter-select" id="clm-filter-insurer" onchange="filterClmInsurer(this.value)">
+    <option value="">All Insurers</option>
+    <option>NHIF</option><option>SHA</option><option>Jubilee Health</option>
+    <option>AAR</option><option>CIC</option><option>Resolution Health</option><option>Other</option>
+  </select>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+  <th>Date</th><th>Claim Ref</th><th>Insurer / Scheme</th><th>Description</th>
+  <th class="text-right">Claimed</th><th class="text-right">Approved</th>
+  <th class="text-right">Received</th><th>Status</th>
+  <th>Expected Date</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="clm-body"><tr class="loading-row"><td colspan="10">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="4">TOTAL</td>
+  <td class="amount text-right" id="clm-t-claimed">0.00</td>
+  <td class="amount text-right" id="clm-t-approved">0.00</td>
+  <td class="amount text-right" id="clm-t-received">0.00</td>
+  <td colspan="3" class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── SUB-VOTE LEDGER ── -->
+<div id="page-svledger" class="page">
+<div class="page-header">
+  <div><div class="page-title">📑 Sub-Vote Ledger</div><div class="page-sub">Expenditure per vote item</div></div>
+  <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+</div>
+<div class="toolbar">
+  <select class="filter-select" id="svl-vote" onchange="loadSVLedger()" style="width:320px">
+    <option value="">— Select Vote Item —</option>
+  </select>
+</div>
+<div id="svl-content">
+  <div class="empty-state"><div class="empty-icon">📑</div><p>Select a vote item to view its ledger</p></div>
+</div>
+</div>
+
+<!-- ── GENERAL LEDGER ── -->
+<div id="page-glledger" class="page">
+<div class="page-header">
+  <div><div class="page-title">📚 General Ledger</div><div class="page-sub">All accounts — T-Account view</div></div>
+  <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+</div>
+<div class="toolbar">
+  <select class="filter-select" id="gl-account" onchange="loadGLAccount()" style="width:300px">
+    <option value="">— Select Account —</option>
+    <optgroup label="Bank Accounts">
+      <option value="bank-kcb">KCB Main Account</option>
+      <option value="bank-fif">FIF Account</option>
+      <option value="bank-nhif">NHIF/SHA Account</option>
+      <option value="bank-petty">Petty Cash</option>
+    </optgroup>
+    <optgroup label="Revenue Accounts">
+      <option value="rev-County Transfer">County Government Transfers</option>
+      <option value="rev-FIF Allocation">FIF Allocations</option>
+      <option value="rev-DANIDA Grant">DANIDA Grant</option>
+      <option value="rev-OPD">OPD Revenue</option>
+      <option value="rev-IPD">IPD Revenue</option>
+      <option value="rev-Laboratory">Laboratory Revenue</option>
+      <option value="rev-Pharmacy">Pharmacy Revenue</option>
+      <option value="rev-NHIF/SHA">NHIF/SHA Collections</option>
+      <option value="rev-Insurance">Insurance Revenue</option>
+      <option value="rev-Other Income">Other Income</option>
+    </optgroup>
+    <optgroup label="Expenditure">
+      <option value="exp-all">All Expenditure (Vote Book)</option>
+    </optgroup>
+    <optgroup label="Accruals">
+      <option value="acc-payables">Accounts Payable</option>
+      <option value="acc-receivables">Accounts Receivable</option>
+    </optgroup>
+  </select>
+</div>
+<div id="gl-content">
+  <div class="empty-state"><div class="empty-icon">📚</div><p>Select an account to view its ledger</p></div>
+</div>
+</div>
+
+<!-- ── TRIAL BALANCE ── -->
+<div id="page-trialbal" class="page">
+<div class="page-header">
+  <div><div class="page-title">⚖️ Trial Balance</div><div class="page-sub">All accounts — as at reporting date</div></div>
+  <div style="display:flex;gap:8px">
+    <select class="filter-select" id="tb-period" onchange="loadTrialBalance()">
+      <option value="">Full Year (Jul 2026 – Jun 2027)</option>
+      <option value="2026-07">As at 31 Jul 2026</option>
+      <option value="2026-08">As at 31 Aug 2026</option>
+      <option value="2026-09">As at 30 Sep 2026</option>
+      <option value="2026-10">As at 31 Oct 2026</option>
+      <option value="2026-11">As at 30 Nov 2026</option>
+      <option value="2026-12">As at 31 Dec 2026</option>
+      <option value="2027-01">As at 31 Jan 2027</option>
+      <option value="2027-02">As at 28 Feb 2027</option>
+      <option value="2027-03">As at 31 Mar 2027</option>
+      <option value="2027-04">As at 30 Apr 2027</option>
+      <option value="2027-05">As at 31 May 2027</option>
+      <option value="2027-06">As at 30 Jun 2027</option>
+    </select>
+    <button class="btn btn-teal btn-sm" onclick="loadTrialBalance()">Generate</button>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+<div id="tb-content">
+  <div class="empty-state"><div class="empty-icon">⚖️</div><p>Click Generate to produce the Trial Balance</p></div>
+</div>
+</div>
+
+<!-- ── REVENUE REPORT ── -->
+<div id="page-revreport" class="page">
+<div class="page-header">
+  <div><div class="page-title">📈 Revenue Report</div><div class="page-sub">Revenue by stream and period</div></div>
+  <div style="display:flex;gap:8px">
+    <select class="filter-select" id="rr-period">
+      <option value="">Full Year</option>
+      <option value="2026-07">July 2026</option><option value="2026-08">August 2026</option>
+      <option value="2026-09">September 2026</option><option value="2026-10">October 2026</option>
+      <option value="2026-11">November 2026</option><option value="2026-12">December 2026</option>
+      <option value="2027-01">January 2027</option><option value="2027-02">February 2027</option>
+      <option value="2027-03">March 2027</option><option value="2027-04">April 2027</option>
+      <option value="2027-05">May 2027</option><option value="2027-06">June 2027</option>
+    </select>
+    <button class="btn btn-teal btn-sm" onclick="loadRevReport()">Generate</button>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+<div id="rr-content">
+  <div class="empty-state"><div class="empty-icon">📈</div><p>Select a period and click Generate</p></div>
+</div>
+</div>
+
+<!-- ── FINANCIAL STATEMENTS ── -->
+<div id="page-finstat" class="page">
+<div class="page-header">
+  <div><div class="page-title">📄 Financial Statements</div><div class="page-sub">IPSAS Accrual Basis — FY 2026/2027</div></div>
+  <div style="display:flex;gap:8px">
+    <select class="filter-select" id="fs-period">
+      <option value="">Full Year (Jul 2026 – Jun 2027)</option>
+      <option value="Q1">Q1 (Jul–Sep 2026)</option>
+      <option value="Q2">Q2 (Oct–Dec 2026)</option>
+      <option value="Q3">Q3 (Jan–Mar 2027)</option>
+      <option value="Q4">Q4 (Apr–Jun 2027)</option>
+    </select>
+    <button class="btn btn-teal btn-sm" onclick="loadFinStats()">Generate</button>
+    <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+<div id="fs-content">
+  <div class="empty-state"><div class="empty-icon">📄</div><p>Click Generate to produce IPSAS Financial Statements</p></div>
+</div>
+</div>
+
+<!-- ── VOTE MANAGEMENT ── -->
+<div id="page-votes" class="page">
+<div class="page-header">
+  <div><div class="page-title">⚙️ Vote Management</div><div class="page-sub">AIE 2026/2027 budget lines</div></div>
+  <button class="btn btn-primary btn-sm" onclick="openModal('vote-modal')">+ Add Vote</button>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+  <th>IFMIS Code</th><th>Vote Item Name</th><th>Category</th>
+  <th class="text-right">AIE Budget (KES)</th><th class="no-print">Actions</th>
+</tr></thead>
+<tbody id="votes-body"><tr class="loading-row"><td colspan="5">Loading…</td></tr></tbody>
+<tfoot><tr class="tfoot-row">
+  <td colspan="3">TOTAL AIE BUDGET</td>
+  <td class="amount text-right" id="votes-total">0.00</td>
+  <td class="no-print"></td>
+</tr></tfoot>
+</table>
+</div>
+</div>
+
+<!-- ── SETTINGS ── -->
+<div id="page-settings" class="page">
+<div class="page-header">
+  <div><div class="page-title">🔧 Settings</div><div class="page-sub">Hospital and system configuration</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div class="form-section">
+  <div class="card-title">Hospital Information</div>
+  <div class="form-grid fg2">
+    <div><label>Hospital Name</label><input id="set-name" placeholder="Lodwar County Referral Hospital"/></div>
+    <div><label>County</label><input id="set-county" placeholder="Turkana County"/></div>
+    <div><label>Department</label><input id="set-dept" placeholder="Health &amp; Sanitation"/></div>
+    <div><label>Financial Year</label><input id="set-fy" value="2026/2027" readonly/></div>
+    <div><label>Senior Accountant</label><input id="set-acct" placeholder="Full name"/></div>
+    <div><label>ICPAK No.</label><input id="set-icpak" placeholder="ICPAK/xxxx"/></div>
+    <div><label>CEO / Director</label><input id="set-ceo" placeholder="Full name"/></div>
+    <div><label>Board Chairperson</label><input id="set-chair" placeholder="Full name"/></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+</div>
+<div class="form-section">
+  <div class="card-title">Registered Users</div>
+  <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+  <tbody id="users-list"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--g200)">
+    <div class="card-title">Firebase Config</div>
+    <button class="btn btn-outline btn-sm btn-danger" onclick="resetCfg()">🔄 Reset &amp; Reconfigure</button>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ── AUDIT LOG ── -->
+<div id="page-auditlog" class="page">
+<div class="page-header">
+  <div><div class="page-title">🔍 Audit Log</div><div class="page-sub">All system activity</div></div>
+  <div style="display:flex;gap:8px">
+    <select class="filter-select" id="al-col" onchange="loadAuditLog()">
+      <option value="">All Collections</option>
+      <option value="cashbook">Cash Book</option><option value="voteExpenses">Vote Book</option>
+      <option value="accruals">Accruals</option><option value="revenue">Revenue</option>
+      <option value="claims">Claims</option><option value="votes">Votes</option>
+    </select>
+    <button class="btn btn-teal btn-sm" onclick="loadAuditLog()">Load</button>
+  </div>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+  <th>Timestamp</th><th>User</th><th>Role</th><th>Action</th>
+  <th>Collection</th><th>Reference</th><th>Details</th>
+</tr></thead>
+<tbody id="al-body"><tr class="loading-row"><td colspan="7">Click Load to view audit trail</td></tr></tbody>
+</table>
+</div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- SESSION TIMEOUT MODAL -->
+<div id="session-modal">
+  <div class="session-box">
+    <div style="font-size:48px">⏱️</div>
+    <h3>Session Expiring</h3>
+    <p>You have been inactive for 28 minutes.</p>
+    <p>You will be automatically signed out in</p>
+    <div class="session-cd" id="session-cd">2:00</div>
+    <p>to protect financial data.</p>
+    <button id="session-stay-btn" onclick="resetIdleTimer()">✓ Stay Signed In</button>
+  </div>
+</div>
+
+<!-- ════════════════ MODALS ════════════════ -->
+
+<!-- CASH BOOK MODAL -->
+<div id="cb-modal" class="modal-overlay">
+<div class="modal"><div class="modal-header">
+  <span class="modal-title" id="cb-modal-title">New Cash Book Entry</span>
+  <button class="modal-close" onclick="closeModal('cb-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="form-grid fg2">
+    <div><label>Date <span class="req">*</span></label><input type="date" id="cb-dt"/></div>
+    <div><label>Reference No. <span class="req">*</span></label><input id="cb-rf" placeholder="PV-001 / RCP-001"/></div>
+    <div><label>Transaction Type <span class="req">*</span></label>
+      <select id="cb-tp">
+        <option value="Receipt">Receipt (Dr) — Money In</option>
+        <option value="Payment">Payment (Cr) — Money Out</option>
+      </select></div>
+    <div><label>Bank / Fund Account <span class="req">*</span></label>
+      <select id="cb-bk">
+        <option>KCB Main Account</option><option>FIF Account</option>
+        <option>NHIF/SHA Account</option><option>Petty Cash</option>
+      </select></div>
+    <div><label>Vote Item / Category</label>
+      <select id="cb-vt"><option value="">— Select Vote (for payments) —</option></select></div>
+    <div><label>IFMIS Code</label><input id="cb-ic" placeholder="Auto-filled" readonly style="background:var(--g100)"/></div>
+    <div><label>Payee / Payer <span class="req">*</span></label><input id="cb-payee" placeholder="Name of payee or payer"/></div>
+    <div><label>Cheque / EFT / PV No.</label><input id="cb-ch" placeholder="Cheque or PV number"/></div>
+    <div style="grid-column:span 2"><label>Description / Narration <span class="req">*</span></label>
+      <input id="cb-ds" placeholder="Purpose of this transaction"/></div>
+    <div><label>Amount (KES) <span class="req">*</span></label><input type="number" id="cb-am" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Remarks / Authority</label><input id="cb-rm" placeholder="Optional remarks"/></div>
+  </div>
+  <div id="cb-dup-warn" class="alert alert-warn" style="display:none">⚠️ This reference number already exists. Proceed with caution.</div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="cb-del-btn" style="display:none;margin-right:auto" onclick="deleteCBEntry()">🗑 Delete</button>
+  <button class="btn btn-outline" onclick="closeModal('cb-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveCB()">💾 Save Entry</button>
+</div></div></div>
+
+<!-- VOTE EXPENSE MODAL -->
+<div id="ve-modal" class="modal-overlay">
+<div class="modal"><div class="modal-header">
+  <span class="modal-title" id="ve-modal-title">Record Vote Expenditure</span>
+  <button class="modal-close" onclick="closeModal('ve-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="form-grid fg2">
+    <div><label>Date <span class="req">*</span></label><input type="date" id="ve-dt"/></div>
+    <div><label>LPO / LSO / Voucher No. <span class="req">*</span></label><input id="ve-rf" placeholder="LPO-001"/></div>
+    <div style="grid-column:span 2"><label>Vote Item <span class="req">*</span></label>
+      <select id="ve-vt" onchange="veVoteChange()"><option value="">— Select Vote Item —</option></select></div>
+    <div><label>IFMIS Code</label><input id="ve-ic" readonly style="background:var(--g100)"/></div>
+    <div><label>Payment Status <span class="req">*</span></label>
+      <select id="ve-st">
+        <option value="Committed">Committed (LPO issued)</option>
+        <option value="Accrued">Accrued (goods received)</option>
+        <option value="Paid">Paid</option>
+      </select></div>
+    <div><label>Supplier / Payee</label><input id="ve-sup" placeholder="Supplier or payee name"/></div>
+    <div><label>Amount (KES) <span class="req">*</span></label><input type="number" id="ve-am" placeholder="0.00" min="0" step="0.01"/></div>
+    <div style="grid-column:span 2"><label>Description</label><input id="ve-ds" placeholder="Description of goods/services"/></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="ve-del-btn" style="display:none;margin-right:auto" onclick="deleteVEEntry()">🗑 Delete</button>
+  <button class="btn btn-outline" onclick="closeModal('ve-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveVE()">💾 Save Expenditure</button>
+</div></div></div>
+
+<!-- ACCRUAL MODAL -->
+<div id="acc-modal" class="modal-overlay">
+<div class="modal"><div class="modal-header">
+  <span class="modal-title" id="acc-modal-title">New Accrual Journal Entry</span>
+  <button class="modal-close" onclick="closeModal('acc-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="alert alert-info">📌 Accrual entries record revenue/expenses when incurred, not when cash is received/paid (IPSAS Accrual Basis).</div>
+  <div class="form-grid fg2">
+    <div><label>Transaction Date <span class="req">*</span></label><input type="date" id="acc-dt"/></div>
+    <div><label>Journal Reference <span class="req">*</span></label><input id="acc-rf" placeholder="JNL-2026-001"/></div>
+    <div style="grid-column:span 2"><label>Entry Type <span class="req">*</span></label>
+      <select id="acc-tp" onchange="accTypeChange()">
+        <option value="Payable">Accrued Expense (Payable) — Dr Expense, Cr Payables</option>
+        <option value="Receivable">Accrued Revenue (Receivable) — Dr Receivables, Cr Revenue</option>
+        <option value="Prepayment">Prepayment / Advance — Dr Prepayments, Cr Cash</option>
+        <option value="Depreciation">Depreciation — Dr Depreciation, Cr Accumulated Depreciation</option>
+        <option value="Adjustment">Adjustment / Correction</option>
+      </select></div>
+    <div><label>Debit Account <span class="req">*</span></label><input id="acc-dr" placeholder="Account debited"/></div>
+    <div><label>Credit Account <span class="req">*</span></label><input id="acc-cr" placeholder="Account credited"/></div>
+    <div style="grid-column:span 2"><label>Description / Narration <span class="req">*</span></label>
+      <input id="acc-ds" placeholder="Purpose of this journal entry"/></div>
+    <div><label>Amount (KES) <span class="req">*</span></label><input type="number" id="acc-am" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Counterparty / Entity</label><input id="acc-cp" placeholder="Supplier / customer name"/></div>
+    <div><label>Accounting Period <span class="req">*</span></label>
+      <select id="acc-per">
+        <option value="2026-07">July 2026</option><option value="2026-08">August 2026</option>
+        <option value="2026-09">September 2026</option><option value="2026-10">October 2026</option>
+        <option value="2026-11">November 2026</option><option value="2026-12">December 2026</option>
+        <option value="2027-01">January 2027</option><option value="2027-02">February 2027</option>
+        <option value="2027-03">March 2027</option><option value="2027-04">April 2027</option>
+        <option value="2027-05">May 2027</option><option value="2027-06">June 2027</option>
+      </select></div>
+    <div><label>Status</label>
+      <select id="acc-st">
+        <option value="Draft">Draft</option>
+        <option value="Posted">Posted</option>
+        <option value="Reversed">Reversed</option>
+      </select></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="acc-del-btn" style="display:none;margin-right:auto" onclick="deleteAccEntry()">🗑 Delete</button>
+  <button class="btn btn-outline" onclick="closeModal('acc-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveAcc()">💾 Post Journal</button>
+</div></div></div>
+
+<!-- REVENUE MODAL -->
+<div id="rev-modal" class="modal-overlay">
+<div class="modal"><div class="modal-header">
+  <span class="modal-title" id="rev-modal-title">Record Revenue Receipt</span>
+  <button class="modal-close" onclick="closeModal('rev-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="form-grid fg2">
+    <div><label>Date <span class="req">*</span></label><input type="date" id="rev-dt"/></div>
+    <div><label>Receipt No. <span class="req">*</span></label><input id="rev-rf" placeholder="RCP-001"/></div>
+    <div><label>Revenue Stream <span class="req">*</span></label>
+      <select id="rev-st">
+        <option>OPD</option><option>IPD</option><option>Laboratory</option>
+        <option>Pharmacy</option><option>Radiology</option><option>Maternity</option>
+        <option>Theatre</option><option>NHIF/SHA</option><option>Insurance</option>
+        <option>FIF Allocation</option><option>DANIDA Grant</option>
+        <option>County Transfer</option><option>Other Income</option>
+      </select></div>
+    <div><label>Collected To <span class="req">*</span></label>
+      <select id="rev-bk">
+        <option>KCB Main Account</option><option>FIF Account</option>
+        <option>NHIF/SHA Account</option><option>Petty Cash</option>
+      </select></div>
+    <div><label>Payer / Patient Group</label><input id="rev-py" placeholder="Name of payer"/></div>
+    <div><label>Amount (KES) <span class="req">*</span></label><input type="number" id="rev-am" placeholder="0.00" min="0" step="0.01"/></div>
+    <div style="grid-column:span 2"><label>Description</label><input id="rev-ds" placeholder="Details of this revenue"/></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="rev-del-btn" style="display:none;margin-right:auto" onclick="deleteRevEntry()">🗑 Delete</button>
+  <button class="btn btn-outline" onclick="closeModal('rev-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveRev()">💾 Save Revenue</button>
+</div></div></div>
+
+<!-- CLAIMS MODAL -->
+<div id="clm-modal" class="modal-overlay">
+<div class="modal"><div class="modal-header">
+  <span class="modal-title" id="clm-modal-title">Log Insurance / NHIF Claim</span>
+  <button class="modal-close" onclick="closeModal('clm-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="form-grid fg2">
+    <div><label>Date Submitted <span class="req">*</span></label><input type="date" id="clm-dt"/></div>
+    <div><label>Claim Reference No. <span class="req">*</span></label><input id="clm-rf" placeholder="CLM-001"/></div>
+    <div><label>Insurer / Scheme <span class="req">*</span></label>
+      <select id="clm-ins">
+        <option>NHIF</option><option>SHA (Social Health Authority)</option>
+        <option>Jubilee Health</option><option>AAR</option><option>CIC</option>
+        <option>Resolution Health</option><option>Britam</option><option>Other</option>
+      </select></div>
+    <div><label>Status <span class="req">*</span></label>
+      <select id="clm-st">
+        <option value="Submitted">Submitted</option><option value="Approved">Approved</option>
+        <option value="Partial">Partial</option><option value="Paid">Paid</option>
+        <option value="Rejected">Rejected</option><option value="Disputed">Disputed</option>
+      </select></div>
+    <div style="grid-column:span 2"><label>Patient / Batch Description</label>
+      <input id="clm-ds" placeholder="Description of claim"/></div>
+    <div><label>Claimed Amount (KES) <span class="req">*</span></label><input type="number" id="clm-ca" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Approved Amount (KES)</label><input type="number" id="clm-aa" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Amount Received (KES)</label><input type="number" id="clm-ra" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Expected Collection Date</label><input type="date" id="clm-ed"/></div>
+    <div><label>Date Received</label><input type="date" id="clm-rd"/></div>
+    <div><label>Bank Received To</label>
+      <select id="clm-bk">
+        <option>NHIF/SHA Account</option><option>KCB Main Account</option>
+        <option>FIF Account</option><option>Petty Cash</option>
+      </select></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="clm-del-btn" style="display:none;margin-right:auto" onclick="deleteClmEntry()">🗑 Delete</button>
+  <button class="btn btn-outline" onclick="closeModal('clm-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveClm()">💾 Save Claim</button>
+</div></div></div>
+
+<!-- VOTE MODAL -->
+<div id="vote-modal" class="modal-overlay">
+<div class="modal modal-lg"><div class="modal-header">
+  <span class="modal-title" id="vote-modal-title">Add Vote Item</span>
+  <button class="modal-close" onclick="closeModal('vote-modal')">✕</button>
+</div><div class="modal-body">
+  <div class="form-grid fg2">
+    <div><label>IFMIS Code <span class="req">*</span></label><input id="vt-code" placeholder="e.g. 2210101"/></div>
+    <div><label>Category <span class="req">*</span></label>
+      <select id="vt-cat">
+        <option>Personnel Emoluments</option><option>Operations &amp; Maintenance</option>
+        <option>Medical &amp; Clinical Supplies</option><option>General Supplies</option>
+        <option>Contracted Services</option><option>Maintenance &amp; Repairs</option>
+        <option>Capital Expenditure</option><option>Travel &amp; Subsistence</option>
+        <option>Utilities</option><option>Other Recurrent</option>
+      </select></div>
+    <div style="grid-column:span 2"><label>Vote Item Name <span class="req">*</span></label>
+      <input id="vt-name" placeholder="e.g. Medical Drugs &amp; Supplies"/></div>
+    <div><label>AIE Budget Amount (KES) <span class="req">*</span></label>
+      <input type="number" id="vt-budget" placeholder="0.00" min="0" step="0.01"/></div>
+    <div><label>Financial Year</label><input id="vt-fy" value="2026/2027" readonly style="background:var(--g100)"/></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-danger btn-sm" id="vt-del-btn" style="display:none;margin-right:auto" onclick="deleteVote()">🗑 Delete Vote</button>
+  <button class="btn btn-outline" onclick="closeModal('vote-modal')">Cancel</button>
+  <button class="btn btn-primary" onclick="saveVote()">💾 Save Vote</button>
+</div></div></div>
+
+<!-- ════════════════ JAVASCRIPT ════════════════ -->
+<script>
+'use strict';
+// ── GLOBAL STATE ──
+let db=null,auth=null,curUser=null,userProfile=null;
+let allCB=[],allVE=[],allVotes=[],allRev=[],allClm=[],allAcc=[];
+let editId=null,editCollection=null;
+const FY='2026/2027';
+const BANKS=['KCB Main Account','FIF Account','NHIF/SHA Account','Petty Cash'];
+const REV_STREAMS=['OPD','IPD','Laboratory','Pharmacy','Radiology','Maternity','Theatre','NHIF/SHA','Insurance','FIF Allocation','DANIDA Grant','County Transfer','Other Income'];
+
+// ── UTILS ──
+const fmt=n=>'KES '+Number(n||0).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtNum=n=>Number(n||0).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const today=()=>new Date().toISOString().split('T')[0];
+const monthOf=d=>d?d.substring(0,7):'';
+const showEl=(id,show)=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none'};
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open');editId=null;editCollection=null}
+function showTab(t){
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',i===(t==='signin'?0:1)));
+  showEl('tab-signin',t==='signin');showEl('tab-register',t==='register');
+}
+function setAuthErr(msg){const e=document.getElementById('auth-err');if(e){e.textContent=msg;e.style.display=msg?'block':'none'}}
+function toast(msg,type='ok'){
+  let t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;z-index:9000;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);background:${type==='err'?'#e74c3c':type==='warn'?'#f39c12':'#27ae60'};color:#fff;animation:fadeIn .3s`;
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+function confirmDel(msg){return confirm('⚠️ '+msg+'\n\nThis action cannot be undone. Continue?')}
+
+// ── FIREBASE INIT ──
+function connectFirebase(){
+  const key=document.getElementById('cfg-key').value.trim();
+  const domain=document.getElementById('cfg-domain').value.trim();
+  const pid=document.getElementById('cfg-pid').value.trim();
+  const appid=document.getElementById('cfg-appid').value.trim();
+  if(!key||!domain||!pid||!appid){document.getElementById('cfg-err').textContent='All fields are required.';document.getElementById('cfg-err').style.display='block';return}
+  const cfg={apiKey:key,authDomain:domain,projectId:pid,appId:appid};
+  localStorage.setItem('lcrh_cfg3',JSON.stringify(cfg));
+  initFB(cfg);
+}
+function initFB(cfg){
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    else firebase.app();
+    db=firebase.firestore();auth=firebase.auth();
+    showEl('cfg-section',false);showEl('signin-section',true);
+    listenAuth();
+  }catch(e){document.getElementById('cfg-err').textContent='Connection failed: '+e.message;document.getElementById('cfg-err').style.display='block'}
+}
+function resetCfg(){localStorage.removeItem('lcrh_cfg3');location.reload()}
+window.onload=function(){
+  const saved=localStorage.getItem('lcrh_cfg3');
+  if(saved){try{initFB(JSON.parse(saved))}catch(e){localStorage.removeItem('lcrh_cfg3')}}
+};
+
+// ── AUTH ──
+function listenAuth(){
+  auth.onAuthStateChanged(async u=>{
+    if(u){
+      curUser=u;
+      const doc=await db.collection('users').doc(u.uid).get();
+      userProfile=doc.exists?doc.data():{name:u.email,role:'Staff'};
+      document.getElementById('user-name-display').textContent=userProfile.name||u.email;
+      document.getElementById('user-role-display').textContent=userProfile.role||'';
+      document.getElementById('auth-screen').style.display='none';
+      document.getElementById('app').style.display='flex';
+      document.getElementById('app').style.flexDirection='column';
+      startIdleTimer();
+      await loadAllData();
+      nav('dashboard');
+    }else{
+      curUser=null;userProfile=null;
+      document.getElementById('auth-screen').style.display='flex';
+      document.getElementById('app').style.display='none';
+      stopIdleTimer();
+    }
+  });
+}
+async function doSignIn(){
+  const em=document.getElementById('si-email').value.trim();
+  const pw=document.getElementById('si-pass').value;
+  if(!em||!pw){setAuthErr('Enter email and password');return}
+  try{await auth.signInWithEmailAndPassword(em,pw);setAuthErr('')}
+  catch(e){setAuthErr(e.message)}
+}
+async function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const role=document.getElementById('reg-role').value;
+  const em=document.getElementById('reg-email').value.trim();
+  const pw=document.getElementById('reg-pass').value;
+  if(!name||!em||!pw){setAuthErr('All fields required');return}
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(em,pw);
+    await db.collection('users').doc(cred.user.uid).set({name,role,email:em,joined:new Date().toISOString()});
+    setAuthErr('');
+  }catch(e){setAuthErr(e.message)}
+}
+function doLogout(){if(confirm('Sign out?'))auth.signOut()}
+
+// ── LOAD ALL DATA ──
+async function loadAllData(){
+  try{
+    const [cbS,veS,vtS,rvS,clS,acS]=await Promise.all([
+      db.collection('cashbook').orderBy('date','desc').get(),
+      db.collection('voteExpenses').orderBy('date','desc').get(),
+      db.collection('votes').orderBy('code').get(),
+      db.collection('revenue').orderBy('date','desc').get(),
+      db.collection('claims').orderBy('date','desc').get(),
+      db.collection('accruals').orderBy('date','desc').get(),
+    ]);
+    allCB=cbS.docs.map(d=>({id:d.id,...d.data()}));
+    allVE=veS.docs.map(d=>({id:d.id,...d.data()}));
+    allVotes=vtS.docs.map(d=>({id:d.id,...d.data()}));
+    allRev=rvS.docs.map(d=>({id:d.id,...d.data()}));
+    allClm=clS.docs.map(d=>({id:d.id,...d.data()}));
+    allAcc=acS.docs.map(d=>({id:d.id,...d.data()}));
+    populateVoteSelects();
+    renderCB();renderVE();renderRev();renderClm();renderAcc();renderVotes();
+    loadDashboard();loadSettings();loadUsers();
+  }catch(e){console.error('Load error',e);toast('Error loading data: '+e.message,'err')}
+}
+
+// ── NAVIGATION ──
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);
+  const ni=document.getElementById('nav-'+page);
+  if(pg)pg.classList.add('active');
+  if(ni)ni.classList.add('active');
+  if(page==='trialbal')loadTrialBalance();
+  if(page==='revreport')loadRevReport();
+  if(page==='finstat')loadFinStats();
+  if(page==='svledger')populateSVLSelect();
+  if(page==='glledger'){}
+  if(page==='auditlog')loadAuditLog();
+  if(page==='votes')renderVotes();
+  if(page==='settings'){loadSettings();loadUsers()}
+}
+
+// ── VOTE SELECTS ──
+function populateVoteSelects(){
+  const opts='<option value="">— Select Vote Item —</option>'+allVotes.map(v=>`<option value="${v.id}" data-code="${v.code}">${v.code} — ${v.name}</option>`).join('');
+  ['cb-vt','ve-vt','svl-vote'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts});
+  const veFilter=document.getElementById('ve-filter-vote');
+  if(veFilter)veFilter.innerHTML='<option value="">All Votes</option>'+allVotes.map(v=>`<option value="${v.id}">${v.code} — ${v.name}</option>`).join('');
+}
+
+// ── DASHBOARD ──
+function loadDashboard(){
+  const curM=new Date().toISOString().substring(0,7);
+  const mCB=allCB.filter(r=>monthOf(r.date)===curM);
+  const receipts=mCB.filter(r=>r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0);
+  const payments=mCB.filter(r=>r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const netCash=allCB.filter(r=>r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0)
+               -allCB.filter(r=>r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const totBudget=allVotes.reduce((s,v)=>s+Number(v.budget||0),0);
+  const totSpent=allVE.filter(r=>r.status==='Paid').reduce((s,r)=>s+Number(r.amount||0),0);
+  const paidAcc=allAcc.filter(r=>r.status==='Posted'&&r.type==='Payable').reduce((s,r)=>s+Number(r.amount||0),0);
+  const pendClm=allClm.filter(r=>r.status!=='Paid'&&r.status!=='Rejected').reduce((s,r)=>s+Number(r.claimedAmount||0),0);
+  document.getElementById('dash-receipts').textContent=fmt(receipts);
+  document.getElementById('dash-payments').textContent=fmt(payments);
+  document.getElementById('dash-net').textContent=fmt(netCash);
+  document.getElementById('dash-aie').textContent=totBudget>0?Math.round(totSpent/totBudget*100)+'%':'0%';
+  document.getElementById('dash-aie-sub').textContent='of '+fmt(totBudget);
+  document.getElementById('dash-payables').textContent=fmt(paidAcc);
+  document.getElementById('dash-claims').textContent=fmt(pendClm);
+  // Recent CB
+  const recent=allCB.slice(0,8);
+  document.getElementById('dash-recent-cb').innerHTML=recent.length?recent.map(r=>`
+    <tr><td>${r.date}</td><td>${r.ref||''}</td><td>${(r.description||'').substring(0,30)}</td>
+    <td><span class="badge ${r.type==='Receipt'?'badge-green':'badge-red'}">${r.type}</span></td>
+    <td class="amount text-right">${fmtNum(r.amount)}</td></tr>`).join('')
+    :'<tr><td colspan="5" class="text-muted text-center">No entries yet</td></tr>';
+  // Top votes by utilisation
+  const voteUtil=allVotes.map(v=>{
+    const spent=allVE.filter(e=>e.voteId===v.id&&e.status==='Paid').reduce((s,e)=>s+Number(e.amount||0),0);
+    return{...v,spent,pct:v.budget>0?spent/v.budget*100:0};
+  }).sort((a,b)=>b.pct-a.pct).slice(0,6);
+  document.getElementById('dash-votes').innerHTML=voteUtil.length?voteUtil.map(v=>`
+    <tr><td>${v.name}</td>
+    <td class="amount text-right">${fmtNum(v.budget)}</td>
+    <td class="amount text-right">${fmtNum(v.spent)}</td>
+    <td class="text-right"><span class="badge ${v.pct>90?'badge-red':v.pct>70?'badge-orange':'badge-green'}">${v.pct.toFixed(1)}%</span></td>
+    </tr>`).join('')
+    :'<tr><td colspan="4" class="text-muted text-center">No votes configured</td></tr>';
+}
+
+// ── CASH BOOK ──
+let cbFiltered=[];
+function renderCB(data){
+  cbFiltered=data||allCB;
+  let runBal=0;
+  const rows=cbFiltered.map(r=>{
+    if(r.type==='Receipt')runBal+=Number(r.amount||0);
+    else runBal-=Number(r.amount||0);
+    const vote=allVotes.find(v=>v.id===r.voteId);
+    return`<tr>
+      <td>${r.date}</td><td>${r.ref||''}</td>
+      <td><span class="badge ${r.type==='Receipt'?'badge-green':'badge-red'}">${r.type}</span></td>
+      <td>${(r.description||'').substring(0,40)}</td>
+      <td>${r.ifmisCode||vote?.code||''}</td>
+      <td>${vote?vote.name:r.voteCategory||''}</td>
+      <td>${r.bank||''}</td><td>${r.chequeNo||''}</td><td>${r.payee||''}</td>
+      <td class="amount text-right ${r.type==='Receipt'?'amount-pos':''}">${r.type==='Receipt'?fmtNum(r.amount):''}</td>
+      <td class="amount text-right ${r.type==='Payment'?'amount-neg':''}">${r.type==='Payment'?fmtNum(r.amount):''}</td>
+      <td class="amount text-right">${fmtNum(runBal)}</td>
+      <td class="no-print" style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm btn-icon" onclick='editCB(${JSON.stringify(r)})'>✏️</button>
+      </td></tr>`;
+  });
+  const totDr=cbFiltered.filter(r=>r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0);
+  const totCr=cbFiltered.filter(r=>r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  document.getElementById('cb-body').innerHTML=rows.length?rows.join(''):'<tr><td colspan="13" class="text-muted text-center" style="padding:24px">No entries found</td></tr>';
+  document.getElementById('cb-total-dr').textContent=fmtNum(totDr);
+  document.getElementById('cb-total-cr').textContent=fmtNum(totCr);
+  document.getElementById('cb-balance').textContent=fmtNum(totDr-totCr);
+}
+function filterCB(v){renderCB(allCB.filter(r=>(r.ref||'').toLowerCase().includes(v.toLowerCase())||(r.description||'').toLowerCase().includes(v.toLowerCase())||(r.payee||'').toLowerCase().includes(v.toLowerCase())))}
+function filterCBBank(v){renderCB(v?allCB.filter(r=>r.bank===v):allCB)}
+function filterCBType(v){renderCB(v?allCB.filter(r=>r.type===v):allCB)}
+function filterCBMonth(v){renderCB(v?allCB.filter(r=>monthOf(r.date)===v):allCB)}
+function newCBEntry(){editId=null;editCollection=null;document.getElementById('cb-modal-title').textContent='New Cash Book Entry';document.getElementById('cb-dt').value=today();['cb-rf','cb-ds','cb-payee','cb-ch','cb-rm','cb-am','cb-ic'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});document.getElementById('cb-tp').value='Receipt';document.getElementById('cb-vt').value='';document.getElementById('cb-bk').value=BANKS[0];showEl('cb-del-btn',false);showEl('cb-dup-warn',false);openModal('cb-modal')}
+function editCB(r){editId=r.id;document.getElementById('cb-modal-title').textContent='Edit Cash Book Entry';document.getElementById('cb-dt').value=r.date||'';document.getElementById('cb-rf').value=r.ref||'';document.getElementById('cb-tp').value=r.type||'Receipt';document.getElementById('cb-ds').value=r.description||'';document.getElementById('cb-vt').value=r.voteId||'';document.getElementById('cb-ic').value=r.ifmisCode||'';document.getElementById('cb-bk').value=r.bank||BANKS[0];document.getElementById('cb-payee').value=r.payee||'';document.getElementById('cb-ch').value=r.chequeNo||'';document.getElementById('cb-am').value=r.amount||'';document.getElementById('cb-rm').value=r.remarks||'';showEl('cb-del-btn',true);showEl('cb-dup-warn',false);openModal('cb-modal')}
+document.getElementById('cb-vt').addEventListener('change',function(){const v=allVotes.find(x=>x.id===this.value);document.getElementById('cb-ic').value=v?v.code:''});
+async function saveCB(){
+  const dt=document.getElementById('cb-dt').value;
+  const rf=document.getElementById('cb-rf').value.trim();
+  const tp=document.getElementById('cb-tp').value;
+  const ds=document.getElementById('cb-ds').value.trim();
+  const am=parseFloat(document.getElementById('cb-am').value)||0;
+  const bk=document.getElementById('cb-bk').value;
+  const py=document.getElementById('cb-payee').value.trim();
+  if(!dt||!rf||!ds||!am||!py){toast('Fill all required fields','err');return}
+  // Dupe check
+  const dup=allCB.find(r=>r.ref===rf&&r.id!==editId);
+  if(dup&&!document.getElementById('cb-dup-warn').style.display===''){
+    showEl('cb-dup-warn',true);return;
+  }
+  const vtId=document.getElementById('cb-vt').value;
+  const vote=allVotes.find(v=>v.id===vtId);
+  const data={date:dt,ref:rf,type:tp,description:ds,amount:am,bank:bk,payee:py,
+    chequeNo:document.getElementById('cb-ch').value.trim(),
+    voteId:vtId,ifmisCode:document.getElementById('cb-ic').value||vote?.code||'',
+    voteCategory:vote?.name||'',remarks:document.getElementById('cb-rm').value.trim(),
+    updatedAt:new Date().toISOString(),updatedBy:userProfile?.name||curUser.email};
+  try{
+    if(editId){await db.collection('cashbook').doc(editId).update(data);toast('Entry updated')}
+    else{data.createdAt=new Date().toISOString();data.createdBy=userProfile?.name||curUser.email;await db.collection('cashbook').add(data);toast('Entry saved')}
+    await writeAudit(editId?'UPDATE':'CREATE','cashbook',rf,data);
+    closeModal('cb-modal');await loadAllData();
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteCBEntry(){
+  if(!editId||!confirmDel('Delete this cash book entry?'))return;
+  try{await db.collection('cashbook').doc(editId).delete();await writeAudit('DELETE','cashbook',editId,{});closeModal('cb-modal');await loadAllData();toast('Entry deleted')}catch(e){toast('Delete failed: '+e.message,'err')}
+}
+function printCashBook(){window.print()}
+
+// ── VOTE EXPENSES ──
+function renderVE(data){
+  const rows=(data||allVE);
+  const total=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+  document.getElementById('ve-body').innerHTML=rows.length?rows.map(r=>{
+    const vote=allVotes.find(v=>v.id===r.voteId);
+    const sc=r.status==='Paid'?'badge-green':r.status==='Accrued'?'badge-teal':'badge-orange';
+    return`<tr>
+      <td>${r.date}</td><td>${r.ref||''}</td>
+      <td>${vote?.code||r.ifmisCode||''}</td>
+      <td>${vote?.name||r.voteCategory||''}</td>
+      <td>${(r.description||'').substring(0,35)}</td>
+      <td>${r.supplier||''}</td>
+      <td><span class="badge ${sc}">${r.status||''}</span></td>
+      <td class="amount text-right">${fmtNum(r.amount)}</td>
+      <td class="no-print"><button class="btn btn-outline btn-sm btn-icon" onclick='editVE(${JSON.stringify(r)})'>✏️</button></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="9" class="text-muted text-center" style="padding:24px">No expenditure records</td></tr>';
+  document.getElementById('ve-total').textContent=fmtNum(total);
+  // Stats
+  const c=allVE.filter(r=>r.status==='Committed').reduce((s,r)=>s+Number(r.amount||0),0);
+  const a=allVE.filter(r=>r.status==='Accrued').reduce((s,r)=>s+Number(r.amount||0),0);
+  const p=allVE.filter(r=>r.status==='Paid').reduce((s,r)=>s+Number(r.amount||0),0);
+  const b=allVotes.reduce((s,v)=>s+Number(v.budget||0),0);
+  document.getElementById('vb-budget').textContent=fmt(b);
+  document.getElementById('vb-committed').textContent=fmt(c);
+  document.getElementById('vb-accrued').textContent=fmt(a);
+  document.getElementById('vb-paid').textContent=fmt(p);
+}
+function filterVE(v){renderVE(allVE.filter(r=>(r.ref||'').toLowerCase().includes(v.toLowerCase())||(r.supplier||'').toLowerCase().includes(v.toLowerCase())||(r.description||'').toLowerCase().includes(v.toLowerCase())))}
+function filterVEVote(v){renderVE(v?allVE.filter(r=>r.voteId===v):allVE)}
+function filterVEStatus(v){renderVE(v?allVE.filter(r=>r.status===v):allVE)}
+function veVoteChange(){const v=allVotes.find(x=>x.id===document.getElementById('ve-vt').value);document.getElementById('ve-ic').value=v?v.code:''}
+function editVE(r){editId=r.id;document.getElementById('ve-modal-title').textContent='Edit Expenditure';document.getElementById('ve-dt').value=r.date||'';document.getElementById('ve-rf').value=r.ref||'';document.getElementById('ve-vt').value=r.voteId||'';veVoteChange();document.getElementById('ve-st').value=r.status||'Committed';document.getElementById('ve-sup').value=r.supplier||'';document.getElementById('ve-am').value=r.amount||'';document.getElementById('ve-ds').value=r.description||'';showEl('ve-del-btn',true);openModal('ve-modal')}
+async function saveVE(){
+  const dt=document.getElementById('ve-dt').value,rf=document.getElementById('ve-rf').value.trim();
+  const vtId=document.getElementById('ve-vt').value,am=parseFloat(document.getElementById('ve-am').value)||0;
+  if(!dt||!rf||!vtId||!am){toast('Fill all required fields','err');return}
+  const vote=allVotes.find(v=>v.id===vtId);
+  const data={date:dt,ref:rf,voteId:vtId,ifmisCode:vote?.code||'',voteCategory:vote?.name||'',
+    status:document.getElementById('ve-st').value,supplier:document.getElementById('ve-sup').value.trim(),
+    amount:am,description:document.getElementById('ve-ds').value.trim(),
+    updatedAt:new Date().toISOString(),updatedBy:userProfile?.name||curUser.email};
+  try{
+    if(editId)await db.collection('voteExpenses').doc(editId).update(data);
+    else{data.createdAt=new Date().toISOString();data.createdBy=userProfile?.name||curUser.email;await db.collection('voteExpenses').add(data)}
+    await writeAudit(editId?'UPDATE':'CREATE','voteExpenses',rf,data);
+    closeModal('ve-modal');await loadAllData();toast('Expenditure saved');
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteVEEntry(){if(!editId||!confirmDel('Delete this expenditure record?'))return;try{await db.collection('voteExpenses').doc(editId).delete();closeModal('ve-modal');await loadAllData();toast('Deleted')}catch(e){toast('Delete failed','err')}}
+
+// ── ACCRUALS ──
+function accTypeChange(){
+  const tp=document.getElementById('acc-tp').value;
+  const drMap={Payable:'Expenditure / Expense Account',Receivable:'Accounts Receivable (1200)',Prepayment:'Prepayments (1300)',Depreciation:'Depreciation Expense',Adjustment:'Specify debit account'};
+  const crMap={Payable:'Accounts Payable (2100)',Receivable:'Revenue Account (4xxx)',Prepayment:'Bank / Cash Account',Depreciation:'Accumulated Depreciation',Adjustment:'Specify credit account'};
+  document.getElementById('acc-dr').value=drMap[tp]||'';document.getElementById('acc-cr').value=crMap[tp]||'';
+}
+function renderAcc(data){
+  const rows=(data||allAcc);
+  const posted=rows.filter(r=>r.status==='Posted');
+  const payables=posted.filter(r=>r.type==='Payable').reduce((s,r)=>s+Number(r.amount||0),0);
+  const receivables=posted.filter(r=>r.type==='Receivable').reduce((s,r)=>s+Number(r.amount||0),0);
+  const drafts=rows.filter(r=>r.status==='Draft').length;
+  document.getElementById('acc-payables').textContent=fmt(payables);
+  document.getElementById('acc-receivables').textContent=fmt(receivables);
+  document.getElementById('acc-net').textContent=fmt(receivables-payables);
+  document.getElementById('acc-drafts').textContent=drafts;
+  document.getElementById('acc-total').textContent=fmtNum(posted.reduce((s,r)=>s+Number(r.amount||0),0));
+  const scMap={Draft:'badge-gray',Posted:'badge-green',Reversed:'badge-red'};
+  const tcMap={Payable:'badge-red',Receivable:'badge-green',Prepayment:'badge-blue',Depreciation:'badge-orange',Adjustment:'badge-gray'};
+  document.getElementById('acc-body').innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${r.date}</td><td>${r.ref||''}</td>
+    <td><span class="badge ${tcMap[r.type]||'badge-gray'}">${r.type||''}</span></td>
+    <td>${(r.description||'').substring(0,35)}</td>
+    <td>${r.debitAccount||''}</td><td>${r.creditAccount||''}</td>
+    <td>${r.period||''}</td>
+    <td><span class="badge ${scMap[r.status]||'badge-gray'}">${r.status||''}</span></td>
+    <td class="amount text-right">${fmtNum(r.amount)}</td>
+    <td class="no-print"><button class="btn btn-outline btn-sm btn-icon" onclick='editAcc(${JSON.stringify(r)})'>✏️</button></td>
+  </tr>`).join(''):'<tr><td colspan="10" class="text-muted text-center" style="padding:24px">No journal entries</td></tr>';
+}
+function filterAcc(v,field){renderAcc(v?allAcc.filter(r=>r[field===field&&'type'||field]===v||r.status===v||r.period===v):allAcc)}
+function editAcc(r){editId=r.id;document.getElementById('acc-modal-title').textContent='Edit Journal Entry';document.getElementById('acc-dt').value=r.date||'';document.getElementById('acc-rf').value=r.ref||'';document.getElementById('acc-tp').value=r.type||'Payable';document.getElementById('acc-dr').value=r.debitAccount||'';document.getElementById('acc-cr').value=r.creditAccount||'';document.getElementById('acc-ds').value=r.description||'';document.getElementById('acc-am').value=r.amount||'';document.getElementById('acc-cp').value=r.counterparty||'';document.getElementById('acc-per').value=r.period||'';document.getElementById('acc-st').value=r.status||'Draft';showEl('acc-del-btn',true);openModal('acc-modal')}
+async function saveAcc(){
+  const dt=document.getElementById('acc-dt').value,rf=document.getElementById('acc-rf').value.trim();
+  const am=parseFloat(document.getElementById('acc-am').value)||0;
+  const dr=document.getElementById('acc-dr').value.trim(),cr=document.getElementById('acc-cr').value.trim();
+  if(!dt||!rf||!am||!dr||!cr){toast('Fill all required fields','err');return}
+  const data={date:dt,ref:rf,type:document.getElementById('acc-tp').value,debitAccount:dr,creditAccount:cr,
+    description:document.getElementById('acc-ds').value.trim(),amount:am,
+    counterparty:document.getElementById('acc-cp').value.trim(),
+    period:document.getElementById('acc-per').value,status:document.getElementById('acc-st').value,
+    updatedAt:new Date().toISOString(),updatedBy:userProfile?.name||curUser.email};
+  try{
+    if(editId)await db.collection('accruals').doc(editId).update(data);
+    else{data.createdAt=new Date().toISOString();data.createdBy=userProfile?.name||curUser.email;await db.collection('accruals').add(data)}
+    await writeAudit(editId?'UPDATE':'CREATE','accruals',rf,data);
+    closeModal('acc-modal');await loadAllData();toast('Journal entry saved');
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteAccEntry(){if(!editId||!confirmDel('Delete this journal entry?'))return;try{await db.collection('accruals').doc(editId).delete();closeModal('acc-modal');await loadAllData();toast('Deleted')}catch(e){toast('Delete failed','err')}}
+
+// ── REVENUE ──
+function renderRev(data){
+  const rows=(data||allRev);
+  const total=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+  const curM=new Date().toISOString().substring(0,7);
+  document.getElementById('rev-opd').textContent=fmt(allRev.filter(r=>r.stream==='OPD'&&monthOf(r.date)===curM).reduce((s,r)=>s+Number(r.amount||0),0));
+  document.getElementById('rev-ipd').textContent=fmt(allRev.filter(r=>r.stream==='IPD'&&monthOf(r.date)===curM).reduce((s,r)=>s+Number(r.amount||0),0));
+  document.getElementById('rev-nhif').textContent=fmt(allRev.filter(r=>r.stream==='NHIF/SHA'&&monthOf(r.date)===curM).reduce((s,r)=>s+Number(r.amount||0),0));
+  document.getElementById('rev-total').textContent=fmt(allRev.reduce((s,r)=>s+Number(r.amount||0),0));
+  document.getElementById('rev-grand-total').textContent=fmtNum(total);
+  const streamBadge={OPD:'badge-green',IPD:'badge-teal','NHIF/SHA':'badge-blue','FIF Allocation':'badge-orange','County Transfer':'badge-blue',Insurance:'badge-orange'};
+  document.getElementById('rev-body').innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${r.date}</td><td>${r.ref||''}</td>
+    <td><span class="badge ${streamBadge[r.stream]||'badge-gray'}">${r.stream||''}</span></td>
+    <td>${(r.description||'').substring(0,35)}</td>
+    <td>${r.payer||''}</td><td>${r.bank||''}</td>
+    <td class="amount text-right">${fmtNum(r.amount)}</td>
+    <td class="no-print"><button class="btn btn-outline btn-sm btn-icon" onclick='editRev(${JSON.stringify(r)})'>✏️</button></td>
+  </tr>`).join(''):'<tr><td colspan="8" class="text-muted text-center" style="padding:24px">No revenue records</td></tr>';
+}
+function filterRev(v){renderRev(allRev.filter(r=>(r.ref||'').toLowerCase().includes(v.toLowerCase())||(r.description||'').toLowerCase().includes(v.toLowerCase())))}
+function filterRevStream(v){renderRev(v?allRev.filter(r=>r.stream===v):allRev)}
+function filterRevMonth(v){renderRev(v?allRev.filter(r=>monthOf(r.date)===v):allRev)}
+function editRev(r){editId=r.id;document.getElementById('rev-modal-title').textContent='Edit Revenue';document.getElementById('rev-dt').value=r.date||'';document.getElementById('rev-rf').value=r.ref||'';document.getElementById('rev-st').value=r.stream||'OPD';document.getElementById('rev-bk').value=r.bank||BANKS[0];document.getElementById('rev-py').value=r.payer||'';document.getElementById('rev-am').value=r.amount||'';document.getElementById('rev-ds').value=r.description||'';showEl('rev-del-btn',true);openModal('rev-modal')}
+async function saveRev(){
+  const dt=document.getElementById('rev-dt').value,rf=document.getElementById('rev-rf').value.trim(),am=parseFloat(document.getElementById('rev-am').value)||0;
+  if(!dt||!rf||!am){toast('Fill required fields','err');return}
+  const data={date:dt,ref:rf,stream:document.getElementById('rev-st').value,bank:document.getElementById('rev-bk').value,payer:document.getElementById('rev-py').value.trim(),amount:am,description:document.getElementById('rev-ds').value.trim(),updatedAt:new Date().toISOString(),updatedBy:userProfile?.name||curUser.email};
+  try{
+    if(editId)await db.collection('revenue').doc(editId).update(data);
+    else{data.createdAt=new Date().toISOString();data.createdBy=userProfile?.name||curUser.email;await db.collection('revenue').add(data)}
+    await writeAudit(editId?'UPDATE':'CREATE','revenue',rf,data);
+    closeModal('rev-modal');await loadAllData();toast('Revenue saved');
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteRevEntry(){if(!editId||!confirmDel('Delete this revenue record?'))return;try{await db.collection('revenue').doc(editId).delete();closeModal('rev-modal');await loadAllData();toast('Deleted')}catch(e){toast('Delete failed','err')}}
+
+// ── CLAIMS ──
+function renderClm(data){
+  const rows=(data||allClm);
+  const tC=rows.reduce((s,r)=>s+Number(r.claimedAmount||0),0);
+  const tA=rows.reduce((s,r)=>s+Number(r.approvedAmount||0),0);
+  const tR=rows.reduce((s,r)=>s+Number(r.receivedAmount||0),0);
+  document.getElementById('clm-submitted').textContent=fmt(allClm.filter(r=>r.status==='Submitted').reduce((s,r)=>s+Number(r.claimedAmount||0),0));
+  document.getElementById('clm-approved').textContent=fmt(allClm.filter(r=>['Approved','Partial'].includes(r.status)).reduce((s,r)=>s+Number(r.approvedAmount||0),0));
+  document.getElementById('clm-received').textContent=fmt(allClm.reduce((s,r)=>s+Number(r.receivedAmount||0),0));
+  document.getElementById('clm-outstanding').textContent=fmt(allClm.filter(r=>!['Paid','Rejected'].includes(r.status)).reduce((s,r)=>s+Number(r.claimedAmount||0)-Number(r.receivedAmount||0),0));
+  document.getElementById('clm-t-claimed').textContent=fmtNum(tC);
+  document.getElementById('clm-t-approved').textContent=fmtNum(tA);
+  document.getElementById('clm-t-received').textContent=fmtNum(tR);
+  const scMap={Submitted:'badge-orange',Approved:'badge-blue',Partial:'badge-teal',Paid:'badge-green',Rejected:'badge-red',Disputed:'badge-gray'};
+  document.getElementById('clm-body').innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${r.date}</td><td>${r.ref||''}</td><td>${r.insurer||''}</td>
+    <td>${(r.description||'').substring(0,30)}</td>
+    <td class="amount text-right">${fmtNum(r.claimedAmount)}</td>
+    <td class="amount text-right">${fmtNum(r.approvedAmount)}</td>
+    <td class="amount text-right">${fmtNum(r.receivedAmount)}</td>
+    <td><span class="badge ${scMap[r.status]||'badge-gray'}">${r.status||''}</span></td>
+    <td>${r.expectedDate||''}</td>
+    <td class="no-print"><button class="btn btn-outline btn-sm btn-icon" onclick='editClm(${JSON.stringify(r)})'>✏️</button></td>
+  </tr>`).join(''):'<tr><td colspan="10" class="text-muted text-center" style="padding:24px">No claims records</td></tr>';
+}
+function filterClm(v){renderClm(allClm.filter(r=>(r.ref||'').toLowerCase().includes(v.toLowerCase())||(r.insurer||'').toLowerCase().includes(v.toLowerCase())))}
+function filterClmStatus(v){renderClm(v?allClm.filter(r=>r.status===v):allClm)}
+function filterClmInsurer(v){renderClm(v?allClm.filter(r=>r.insurer===v):allClm)}
+function editClm(r){editId=r.id;document.getElementById('clm-modal-title').textContent='Edit Claim';document.getElementById('clm-dt').value=r.date||'';document.getElementById('clm-rf').value=r.ref||'';document.getElementById('clm-ins').value=r.insurer||'NHIF';document.getElementById('clm-st').value=r.status||'Submitted';document.getElementById('clm-ds').value=r.description||'';document.getElementById('clm-ca').value=r.claimedAmount||'';document.getElementById('clm-aa').value=r.approvedAmount||'';document.getElementById('clm-ra').value=r.receivedAmount||'';document.getElementById('clm-ed').value=r.expectedDate||'';document.getElementById('clm-rd').value=r.dateReceived||'';document.getElementById('clm-bk').value=r.bankReceived||'NHIF/SHA Account';showEl('clm-del-btn',true);openModal('clm-modal')}
+async function saveClm(){
+  const dt=document.getElementById('clm-dt').value,rf=document.getElementById('clm-rf').value.trim();
+  const ca=parseFloat(document.getElementById('clm-ca').value)||0;
+  if(!dt||!rf||!ca){toast('Fill required fields','err');return}
+  const data={date:dt,ref:rf,insurer:document.getElementById('clm-ins').value,status:document.getElementById('clm-st').value,description:document.getElementById('clm-ds').value.trim(),claimedAmount:ca,approvedAmount:parseFloat(document.getElementById('clm-aa').value)||0,receivedAmount:parseFloat(document.getElementById('clm-ra').value)||0,expectedDate:document.getElementById('clm-ed').value,dateReceived:document.getElementById('clm-rd').value,bankReceived:document.getElementById('clm-bk').value,updatedAt:new Date().toISOString(),updatedBy:userProfile?.name||curUser.email};
+  try{
+    if(editId)await db.collection('claims').doc(editId).update(data);
+    else{data.createdAt=new Date().toISOString();data.createdBy=userProfile?.name||curUser.email;await db.collection('claims').add(data)}
+    await writeAudit(editId?'UPDATE':'CREATE','claims',rf,data);
+    closeModal('clm-modal');await loadAllData();toast('Claim saved');
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteClmEntry(){if(!editId||!confirmDel('Delete this claim?'))return;try{await db.collection('claims').doc(editId).delete();closeModal('clm-modal');await loadAllData();toast('Deleted')}catch(e){toast('Delete failed','err')}}
+
+// ── VOTES MANAGEMENT ──
+function renderVotes(){
+  const tot=allVotes.reduce((s,v)=>s+Number(v.budget||0),0);
+  document.getElementById('votes-total').textContent=fmtNum(tot);
+  document.getElementById('votes-body').innerHTML=allVotes.length?allVotes.map(v=>`<tr>
+    <td>${v.code||''}</td><td>${v.name||''}</td>
+    <td><span class="tag">${v.category||''}</span></td>
+    <td class="amount text-right">${fmtNum(v.budget)}</td>
+    <td class="no-print"><button class="btn btn-outline btn-sm btn-icon" onclick='editVote(${JSON.stringify(v)})'>✏️</button></td>
+  </tr>`).join(''):'<tr><td colspan="5" class="text-muted text-center" style="padding:24px">No votes configured. Add vote items to start tracking expenditure.</td></tr>';
+}
+function editVote(v){editId=v.id;document.getElementById('vote-modal-title').textContent='Edit Vote Item';document.getElementById('vt-code').value=v.code||'';document.getElementById('vt-name').value=v.name||'';document.getElementById('vt-cat').value=v.category||'Operations & Maintenance';document.getElementById('vt-budget').value=v.budget||'';showEl('vt-del-btn',true);openModal('vote-modal')}
+async function saveVote(){
+  const code=document.getElementById('vt-code').value.trim(),name=document.getElementById('vt-name').value.trim(),budget=parseFloat(document.getElementById('vt-budget').value)||0;
+  if(!code||!name||!budget){toast('Fill all required fields','err');return}
+  const data={code,name,category:document.getElementById('vt-cat').value,budget,fy:FY,updatedAt:new Date().toISOString()};
+  try{
+    if(editId)await db.collection('votes').doc(editId).update(data);
+    else{data.createdAt=new Date().toISOString();await db.collection('votes').add(data)}
+    closeModal('vote-modal');await loadAllData();toast('Vote saved');
+  }catch(e){toast('Save failed: '+e.message,'err')}
+}
+async function deleteVote(){if(!editId||!confirmDel('Delete this vote item?'))return;try{await db.collection('votes').doc(editId).delete();closeModal('vote-modal');await loadAllData();toast('Vote deleted')}catch(e){toast('Delete failed','err')}}
+</script>
+<script>
+// ── SUB-VOTE LEDGER ──
+function populateSVLSelect(){
+  const sel=document.getElementById('svl-vote');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Select Vote Item —</option>'+allVotes.map(v=>`<option value="${v.id}">${v.code} — ${v.name}</option>`).join('');
+}
+function loadSVLedger(){
+  const vId=document.getElementById('svl-vote').value;
+  const vote=allVotes.find(v=>v.id===vId);
+  if(!vote){document.getElementById('svl-content').innerHTML='<div class="empty-state"><div class="empty-icon">📑</div><p>Select a vote item</p></div>';return}
+  const entries=allVE.filter(e=>e.voteId===vId).sort((a,b)=>a.date.localeCompare(b.date));
+  const budget=Number(vote.budget||0);
+  let runBal=budget;
+  const rows=entries.map(e=>{runBal-=Number(e.amount||0);return`<tr>
+    <td>${e.date}</td><td>${e.ref||''}</td><td>${e.description||''}</td>
+    <td>${e.supplier||''}</td><td>${e.ref||''}</td>
+    <td><span class="badge ${e.status==='Paid'?'badge-green':e.status==='Accrued'?'badge-teal':'badge-orange'}">${e.status}</span></td>
+    <td class="amount text-right"></td>
+    <td class="amount text-right">${fmtNum(e.amount)}</td>
+    <td class="amount text-right">${fmtNum(runBal)}</td>
+  </tr>`;});
+  const totSpent=entries.reduce((s,e)=>s+Number(e.amount||0),0);
+  document.getElementById('svl-content').innerHTML=`
+    <div class="card-title">${vote.code} — ${vote.name} <span class="tag">${vote.category}</span></div>
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin:12px 0">
+      <div class="stat-card"><div class="stat-label">AIE Budget</div><div class="stat-value">${fmt(budget)}</div></div>
+      <div class="stat-card red"><div class="stat-label">Total Spent</div><div class="stat-value">${fmt(totSpent)}</div></div>
+      <div class="stat-card green"><div class="stat-label">Balance</div><div class="stat-value">${fmt(budget-totSpent)}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th>Supplier</th><th>LPO/LSO</th><th>Status</th>
+    <th class="text-right">Dr (Budget)</th><th class="text-right">Cr (Expenditure)</th><th class="text-right">Balance</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--g100)"><td>${vote.fy}</td><td>OPENING</td><td colspan="4">AIE Budget Allocation</td>
+      <td class="amount text-right amount-pos">${fmtNum(budget)}</td><td></td><td class="amount text-right">${fmtNum(budget)}</td></tr>
+      ${rows.join('')}
+    </tbody>
+    <tfoot><tr class="tfoot-row">
+      <td colspan="6">TOTALS</td>
+      <td class="amount text-right">${fmtNum(budget)}</td>
+      <td class="amount text-right">${fmtNum(totSpent)}</td>
+      <td class="amount text-right">${fmtNum(budget-totSpent)}</td>
+    </tr></tfoot>
+    </table></div>`;
+}
+
+// ── GENERAL LEDGER ──
+function loadGLAccount(){
+  const val=document.getElementById('gl-account').value;
+  if(!val){document.getElementById('gl-content').innerHTML='<div class="empty-state"><div class="empty-icon">📚</div><p>Select an account</p></div>';return}
+  let entries=[],title='',isDebit=true;
+  if(val.startsWith('bank-')){
+    const bankName={kcb:'KCB Main Account',fif:'FIF Account',nhif:'NHIF/SHA Account',petty:'Petty Cash'}[val.split('-')[1]];
+    title='Bank Account: '+bankName;
+    entries=[
+      ...allCB.filter(r=>r.bank===bankName).map(r=>({date:r.date,ref:r.ref,desc:r.description,dr:r.type==='Receipt'?r.amount:0,cr:r.type==='Payment'?r.amount:0,source:'Cash Book'})),
+    ].sort((a,b)=>a.date.localeCompare(b.date));
+  }else if(val.startsWith('rev-')){
+    const stream=val.substring(4);
+    title='Revenue Account: '+stream;isDebit=false;
+    entries=allRev.filter(r=>r.stream===stream).map(r=>({date:r.date,ref:r.ref,desc:r.description,dr:0,cr:r.amount,source:'Revenue'})).sort((a,b)=>a.date.localeCompare(b.date));
+  }else if(val==='exp-all'){
+    title='All Expenditure Accounts';
+    entries=allVE.map(r=>({date:r.date,ref:r.ref,desc:r.description+' | '+r.supplier,dr:r.amount,cr:0,source:r.voteCategory||'Vote Book'})).sort((a,b)=>a.date.localeCompare(b.date));
+  }else if(val==='acc-payables'){
+    title='Accounts Payable';isDebit=false;
+    entries=allAcc.filter(r=>r.type==='Payable'&&r.status==='Posted').map(r=>({date:r.date,ref:r.ref,desc:r.description,dr:0,cr:r.amount,source:'Accruals'})).sort((a,b)=>a.date.localeCompare(b.date));
+  }else if(val==='acc-receivables'){
+    title='Accounts Receivable';
+    entries=allAcc.filter(r=>r.type==='Receivable'&&r.status==='Posted').map(r=>({date:r.date,ref:r.ref,desc:r.description,dr:r.amount,cr:0,source:'Accruals'})).sort((a,b)=>a.date.localeCompare(b.date));
+  }
+  let runBal=0;
+  const rows=entries.map(e=>{runBal+=Number(e.dr||0)-Number(e.cr||0);return`<tr>
+    <td>${e.date}</td><td>${e.ref||''}</td><td>${(e.desc||'').substring(0,40)}</td>
+    <td class="amount text-right amount-pos">${e.dr?fmtNum(e.dr):''}</td>
+    <td class="amount text-right amount-neg">${e.cr?fmtNum(e.cr):''}</td>
+    <td class="amount text-right">${fmtNum(runBal)}</td>
+    <td><span class="tag">${e.source}</span></td>
+  </tr>`;});
+  const totDr=entries.reduce((s,e)=>s+Number(e.dr||0),0);
+  const totCr=entries.reduce((s,e)=>s+Number(e.cr||0),0);
+  document.getElementById('gl-content').innerHTML=`
+    <div class="card-title">${title}</div>
+    <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Reference</th><th>Description</th>
+    <th class="text-right">Debit (Dr)</th><th class="text-right">Credit (Cr)</th><th class="text-right">Balance</th><th>Source</th></tr></thead>
+    <tbody>${rows.length?rows.join(''):'<tr><td colspan="7" class="text-muted text-center" style="padding:24px">No transactions</td></tr>'}</tbody>
+    <tfoot><tr class="tfoot-row"><td colspan="3">CLOSING BALANCE</td>
+    <td class="amount text-right">${fmtNum(totDr)}</td>
+    <td class="amount text-right">${fmtNum(totCr)}</td>
+    <td class="amount text-right">${fmtNum(totDr-totCr)}</td><td></td>
+    </tr></tfoot></table></div>`;
+}
+
+// ── TRIAL BALANCE ──
+function loadTrialBalance(){
+  const period=document.getElementById('tb-period').value;
+  // Filter helper
+  const inPeriod=d=>!period||monthOf(d)<=period;
+  // Build account balances
+  const accounts=[];
+  // 1. Bank accounts (Dr normal)
+  BANKS.forEach(bk=>{
+    const dr=allCB.filter(r=>r.bank===bk&&r.type==='Receipt'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+    const cr=allCB.filter(r=>r.bank===bk&&r.type==='Payment'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+    if(dr||cr)accounts.push({code:'1xxx',name:'Bank: '+bk,dr:dr>cr?dr-cr:0,cr:cr>dr?cr-dr:0});
+  });
+  // 2. Accounts Receivable — insurance claims (Dr normal)
+  const arClms=allClm.filter(r=>!['Paid','Rejected'].includes(r.status)&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.claimedAmount||0)-Number(r.receivedAmount||0),0);
+  const arAcc=allAcc.filter(r=>r.type==='Receivable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  if(arClms+arAcc)accounts.push({code:'1200',name:'Accounts Receivable',dr:arClms+arAcc,cr:0});
+  // 3. Prepayments (Dr normal)
+  const prepay=allAcc.filter(r=>r.type==='Prepayment'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  if(prepay)accounts.push({code:'1300',name:'Prepayments / Advances',dr:prepay,cr:0});
+  // 4. Accounts Payable (Cr normal)
+  const apAcc=allAcc.filter(r=>r.type==='Payable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  if(apAcc)accounts.push({code:'2100',name:'Accounts Payable',dr:0,cr:apAcc});
+  // 5. Revenue accounts (Cr normal)
+  REV_STREAMS.forEach(st=>{
+    const tot=allRev.filter(r=>r.stream===st&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+    const accRev=allAcc.filter(r=>r.type==='Receivable'&&r.status==='Posted'&&r.creditAccount&&r.creditAccount.toLowerCase().includes(st.toLowerCase())&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+    if(tot+accRev)accounts.push({code:'4xxx',name:'Revenue: '+st,dr:0,cr:tot+accRev});
+  });
+  // 6. Expenditure accounts (Dr normal) — by vote category
+  const cats={};
+  allVE.filter(r=>inPeriod(r.date)).forEach(r=>{
+    const vote=allVotes.find(v=>v.id===r.voteId);
+    const cat=vote?.category||'Other';
+    if(!cats[cat])cats[cat]=0;
+    cats[cat]+=Number(r.amount||0);
+  });
+  Object.entries(cats).forEach(([cat,amt])=>{if(amt)accounts.push({code:'5xxx',name:'Expenditure: '+cat,dr:amt,cr:0})});
+  // 7. Accrued expenditure
+  const accExp=allAcc.filter(r=>r.type==='Payable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  if(accExp)accounts.push({code:'5xxx',name:'Accrued Expenditure',dr:accExp,cr:0});
+  // 8. Depreciation
+  const dep=allAcc.filter(r=>r.type==='Depreciation'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  if(dep){accounts.push({code:'5800',name:'Depreciation',dr:dep,cr:0});accounts.push({code:'1410',name:'Accumulated Depreciation',dr:0,cr:dep})}
+  // Totals
+  const totDr=accounts.reduce((s,a)=>s+a.dr,0);
+  const totCr=accounts.reduce((s,a)=>s+a.cr,0);
+  const diff=totDr-totCr;
+  // Surplus/Deficit balancing entry
+  const revTotal=allRev.filter(r=>inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0)+
+    allAcc.filter(r=>r.type==='Receivable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  const expTotal=allVE.filter(r=>inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0)+
+    allAcc.filter(r=>['Payable','Depreciation'].includes(r.type)&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  const surplus=revTotal-expTotal;
+  if(surplus>0)accounts.push({code:'3200',name:'Surplus for Period',dr:0,cr:surplus});
+  else if(surplus<0)accounts.push({code:'3200',name:'Deficit for Period',dr:-surplus,cr:0});
+  const finalDr=accounts.reduce((s,a)=>s+a.dr,0);
+  const finalCr=accounts.reduce((s,a)=>s+a.cr,0);
+  const balanced=Math.abs(finalDr-finalCr)<0.01;
+  const periodLabel=period?'As at '+period:'FY 2026/2027 (Full Year)';
+  const sets=JSON.parse(localStorage.getItem('lcrh_settings3')||'{}');
+  document.getElementById('tb-content').innerHTML=`
+    <div class="print-only">
+      <div class="report-header">
+        <h2>${sets.hospitalName||'LCRH'} — Trial Balance</h2>
+        <p>${periodLabel} | Prepared by: ${userProfile?.name||''}</p>
+      </div>
+    </div>
+    <div class="alert ${balanced?'alert-ok':'alert-err'}">${balanced?'✅ Trial balance — Debits equal Credits':'⚠️ Out of balance by KES '+fmtNum(Math.abs(finalDr-finalCr))}</div>
+    <div class="table-wrap"><table>
+    <thead><tr><th>Code</th><th>Account Name</th><th class="text-right">Dr (KES)</th><th class="text-right">Cr (KES)</th></tr></thead>
+    <tbody>
+      <tr><td colspan="4" style="background:var(--g100);font-weight:700;color:var(--navy);padding:8px 12px">ASSETS</td></tr>
+      ${accounts.filter(a=>a.code.startsWith('1')).map(a=>`<tr><td>${a.code}</td><td>${a.name}</td><td class="amount text-right">${a.dr?fmtNum(a.dr):''}</td><td class="amount text-right">${a.cr?fmtNum(a.cr):''}</td></tr>`).join('')}
+      <tr><td colspan="4" style="background:var(--g100);font-weight:700;color:var(--navy);padding:8px 12px">LIABILITIES</td></tr>
+      ${accounts.filter(a=>a.code.startsWith('2')).map(a=>`<tr><td>${a.code}</td><td>${a.name}</td><td class="amount text-right">${a.dr?fmtNum(a.dr):''}</td><td class="amount text-right">${a.cr?fmtNum(a.cr):''}</td></tr>`).join('')}
+      <tr><td colspan="4" style="background:var(--g100);font-weight:700;color:var(--navy);padding:8px 12px">NET ASSETS</td></tr>
+      ${accounts.filter(a=>a.code.startsWith('3')).map(a=>`<tr><td>${a.code}</td><td>${a.name}</td><td class="amount text-right">${a.dr?fmtNum(a.dr):''}</td><td class="amount text-right">${a.cr?fmtNum(a.cr):''}</td></tr>`).join('')}
+      <tr><td colspan="4" style="background:var(--g100);font-weight:700;color:var(--navy);padding:8px 12px">REVENUE</td></tr>
+      ${accounts.filter(a=>a.code.startsWith('4')).map(a=>`<tr><td>${a.code}</td><td>${a.name}</td><td class="amount text-right">${a.dr?fmtNum(a.dr):''}</td><td class="amount text-right">${a.cr?fmtNum(a.cr):''}</td></tr>`).join('')}
+      <tr><td colspan="4" style="background:var(--g100);font-weight:700;color:var(--navy);padding:8px 12px">EXPENDITURE</td></tr>
+      ${accounts.filter(a=>a.code.startsWith('5')).map(a=>`<tr><td>${a.code}</td><td>${a.name}</td><td class="amount text-right">${a.dr?fmtNum(a.dr):''}</td><td class="amount text-right">${a.cr?fmtNum(a.cr):''}</td></tr>`).join('')}
+    </tbody>
+    <tfoot><tr class="tfoot-row"><td colspan="2">GRAND TOTAL</td>
+    <td class="amount text-right">${fmtNum(finalDr)}</td>
+    <td class="amount text-right">${fmtNum(finalCr)}</td>
+    </tr></tfoot></table></div>`;
+}
+
+// ── REVENUE REPORT ──
+function loadRevReport(){
+  const period=document.getElementById('rr-period').value;
+  const rows=allRev.filter(r=>!period||monthOf(r.date)===period);
+  const byStream={};
+  REV_STREAMS.forEach(s=>byStream[s]=0);
+  rows.forEach(r=>byStream[r.stream]=(byStream[r.stream]||0)+Number(r.amount||0));
+  const total=rows.reduce((s,r)=>s+Number(r.amount||0),0);
+  const byMonth={};
+  rows.forEach(r=>{const m=monthOf(r.date);byMonth[m]=(byMonth[m]||0)+Number(r.amount||0)});
+  const sets=JSON.parse(localStorage.getItem('lcrh_settings3')||'{}');
+  const mLabels={'2026-07':'Jul 2026','2026-08':'Aug 2026','2026-09':'Sep 2026','2026-10':'Oct 2026','2026-11':'Nov 2026','2026-12':'Dec 2026','2027-01':'Jan 2027','2027-02':'Feb 2027','2027-03':'Mar 2027','2027-04':'Apr 2027','2027-05':'May 2027','2027-06':'Jun 2027'};
+  document.getElementById('rr-content').innerHTML=`
+    <div class="report-header">
+      <h2>${sets.hospitalName||'LCRH'} — Revenue Report</h2>
+      <p>${period?mLabels[period]:'Full Financial Year 2026/2027'} | Generated: ${new Date().toLocaleDateString('en-KE')}</p>
+    </div>
+    <div class="dual-col">
+    <div>
+      <div class="report-section">
+        <div class="report-section-title">Revenue by Stream</div>
+        ${REV_STREAMS.map(s=>byStream[s]?`<div class="report-row${s==='County Transfer'||s==='FIF Allocation'||s==='DANIDA Grant'?'':' indent'}">
+          <span>${s}</span><span><strong>${fmtNum(byStream[s])}</strong></span></div>`:'').join('')}
+        <div class="report-row total"><span>TOTAL REVENUE</span><span>${fmtNum(total)}</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="report-section">
+        <div class="report-section-title">Revenue by Month</div>
+        ${Object.entries(byMonth).sort().map(([m,v])=>`<div class="report-row indent"><span>${mLabels[m]||m}</span><span>${fmtNum(v)}</span></div>`).join('')}
+        <div class="report-row subtotal"><span>TOTAL</span><span>${fmtNum(total)}</span></div>
+      </div>
+      <div class="report-section" style="margin-top:16px">
+        <div class="report-section-title">Revenue by Category</div>
+        <div class="report-row indent"><span>Own Source Revenue</span><span>${fmtNum(['OPD','IPD','Laboratory','Pharmacy','Radiology','Maternity','Theatre'].reduce((s,k)=>s+(byStream[k]||0),0))}</span></div>
+        <div class="report-row indent"><span>Insurance &amp; Claims</span><span>${fmtNum(['NHIF/SHA','Insurance'].reduce((s,k)=>s+(byStream[k]||0),0))}</span></div>
+        <div class="report-row indent"><span>Government Grants</span><span>${fmtNum(['FIF Allocation','DANIDA Grant','County Transfer'].reduce((s,k)=>s+(byStream[k]||0),0))}</span></div>
+        <div class="report-row indent"><span>Other Income</span><span>${fmtNum(byStream['Other Income']||0)}</span></div>
+        <div class="report-row total"><span>TOTAL</span><span>${fmtNum(total)}</span></div>
+      </div>
+    </div></div>`;
+}
+
+// ── FINANCIAL STATEMENTS (IPSAS) ──
+function loadFinStats(){
+  const period=document.getElementById('fs-period').value;
+  const qMap={Q1:['2026-07','2026-08','2026-09'],Q2:['2026-10','2026-11','2026-12'],Q3:['2027-01','2027-02','2027-03'],Q4:['2027-04','2027-05','2027-06']};
+  const inPeriod=d=>{if(!period)return true;const months=qMap[period];return months&&months.includes(monthOf(d))};
+  const sets=JSON.parse(localStorage.getItem('lcrh_settings3')||'{}');
+  const pLabel=period?({Q1:'Q1 (Jul–Sep 2026)',Q2:'Q2 (Oct–Dec 2026)',Q3:'Q3 (Jan–Mar 2027)',Q4:'Q4 (Apr–Jun 2027)'}[period]):'Full Year (Jul 2026 – Jun 2027)';
+  // REVENUE
+  const revByCat={
+    countyTransfer:allRev.filter(r=>r.stream==='County Transfer'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    fif:allRev.filter(r=>r.stream==='FIF Allocation'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    danida:allRev.filter(r=>r.stream==='DANIDA Grant'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    opd:allRev.filter(r=>r.stream==='OPD'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    ipd:allRev.filter(r=>r.stream==='IPD'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    lab:allRev.filter(r=>['Laboratory','Pharmacy','Radiology','Maternity','Theatre'].includes(r.stream)&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    nhif:allRev.filter(r=>r.stream==='NHIF/SHA'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    insurance:allRev.filter(r=>r.stream==='Insurance'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+    other:allRev.filter(r=>r.stream==='Other Income'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0),
+  };
+  const accRev=allAcc.filter(r=>r.type==='Receivable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  const totGovt=revByCat.countyTransfer+revByCat.fif+revByCat.danida;
+  const totOwn=revByCat.opd+revByCat.ipd+revByCat.lab+revByCat.nhif+revByCat.insurance+revByCat.other;
+  const totRev=totGovt+totOwn+accRev;
+  // EXPENDITURE by category
+  const expByCat={};
+  allVE.filter(r=>inPeriod(r.date)).forEach(r=>{
+    const vote=allVotes.find(v=>v.id===r.voteId);
+    const cat=vote?.category||'Other';
+    expByCat[cat]=(expByCat[cat]||0)+Number(r.amount||0);
+  });
+  const accExp=allAcc.filter(r=>r.type==='Payable'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  const dep=allAcc.filter(r=>r.type==='Depreciation'&&r.status==='Posted'&&inPeriod(r.date)).reduce((s,r)=>s+Number(r.amount||0),0);
+  const totExp=Object.values(expByCat).reduce((s,v)=>s+v,0)+accExp+dep;
+  const surplus=totRev-totExp;
+  // POSITION (Balance Sheet)
+  const cashKCB=allCB.filter(r=>r.bank==='KCB Main Account'&&r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0)-allCB.filter(r=>r.bank==='KCB Main Account'&&r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const cashFIF=allCB.filter(r=>r.bank==='FIF Account'&&r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0)-allCB.filter(r=>r.bank==='FIF Account'&&r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const cashNHIF=allCB.filter(r=>r.bank==='NHIF/SHA Account'&&r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0)-allCB.filter(r=>r.bank==='NHIF/SHA Account'&&r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const cashPetty=allCB.filter(r=>r.bank==='Petty Cash'&&r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0)-allCB.filter(r=>r.bank==='Petty Cash'&&r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const totCash=cashKCB+cashFIF+cashNHIF+cashPetty;
+  const ar=allClm.filter(r=>!['Paid','Rejected'].includes(r.status)).reduce((s,r)=>s+Number(r.claimedAmount||0)-Number(r.receivedAmount||0),0)+accRev;
+  const prepay=allAcc.filter(r=>r.type==='Prepayment'&&r.status==='Posted').reduce((s,r)=>s+Number(r.amount||0),0);
+  const totCurrAssets=totCash+ar+prepay;
+  const ap=allAcc.filter(r=>r.type==='Payable'&&r.status==='Posted').reduce((s,r)=>s+Number(r.amount||0),0);
+  const netAssets=totCurrAssets-ap;
+  // CASH FLOW
+  const opReceipts=allCB.filter(r=>r.type==='Receipt').reduce((s,r)=>s+Number(r.amount||0),0);
+  const opPayments=allCB.filter(r=>r.type==='Payment').reduce((s,r)=>s+Number(r.amount||0),0);
+  const netCF=opReceipts-opPayments;
+  document.getElementById('fs-content').innerHTML=`
+    <div class="print-only">
+      <div class="report-header">
+        <h2>${sets.hospitalName||'LCRH'}</h2>
+        <p>IPSAS Financial Statements — ${pLabel}</p>
+        <p>Prepared by: ${sets.accountant||userProfile?.name||''} ${sets.icpak?'| ICPAK: '+sets.icpak:''}</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <!-- STATEMENT OF FINANCIAL PERFORMANCE -->
+    <div class="report-section">
+      <div class="report-section-title">STATEMENT OF FINANCIAL PERFORMANCE<br><small>For the period: ${pLabel}</small></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>REVENUE</span><span></span></div>
+      <div class="report-row"><span style="font-weight:600">Government Grants &amp; Transfers</span><span></span></div>
+      <div class="report-row indent"><span>County Government Transfers</span><span>${fmtNum(revByCat.countyTransfer)}</span></div>
+      <div class="report-row indent"><span>FIF Allocations</span><span>${fmtNum(revByCat.fif)}</span></div>
+      <div class="report-row indent"><span>DANIDA Grant</span><span>${fmtNum(revByCat.danida)}</span></div>
+      <div class="report-row subtotal"><span>Sub-total: Government Grants</span><span>${fmtNum(totGovt)}</span></div>
+      <div class="report-row" style="font-weight:600"><span>Own Source Revenue</span><span></span></div>
+      <div class="report-row indent"><span>OPD Revenue</span><span>${fmtNum(revByCat.opd)}</span></div>
+      <div class="report-row indent"><span>IPD Revenue</span><span>${fmtNum(revByCat.ipd)}</span></div>
+      <div class="report-row indent"><span>Lab / Pharmacy / Theatre / Other</span><span>${fmtNum(revByCat.lab)}</span></div>
+      <div class="report-row indent"><span>NHIF/SHA Collections</span><span>${fmtNum(revByCat.nhif)}</span></div>
+      <div class="report-row indent"><span>Insurance Claims</span><span>${fmtNum(revByCat.insurance)}</span></div>
+      <div class="report-row indent"><span>Other Income</span><span>${fmtNum(revByCat.other)}</span></div>
+      ${accRev?`<div class="report-row indent"><span>Accrued Revenue (Receivables)</span><span>${fmtNum(accRev)}</span></div>`:''}
+      <div class="report-row subtotal"><span>Sub-total: Own Source Revenue</span><span>${fmtNum(totOwn+accRev)}</span></div>
+      <div class="report-row total"><span>TOTAL REVENUE (A)</span><span>${fmtNum(totRev)}</span></div>
+      <div style="margin-top:12px"></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>EXPENDITURE</span><span></span></div>
+      ${Object.entries(expByCat).map(([cat,amt])=>`<div class="report-row indent"><span>${cat}</span><span>${fmtNum(amt)}</span></div>`).join('')}
+      ${accExp?`<div class="report-row indent"><span>Accrued Expenditure</span><span>${fmtNum(accExp)}</span></div>`:''}
+      ${dep?`<div class="report-row indent"><span>Depreciation</span><span>${fmtNum(dep)}</span></div>`:''}
+      <div class="report-row total"><span>TOTAL EXPENDITURE (B)</span><span>${fmtNum(totExp)}</span></div>
+      <div class="report-row ${surplus>=0?'surplus':'deficit'}"><span>${surplus>=0?'SURPLUS':'DEFICIT'} FOR THE PERIOD (A−B)</span><span>${fmtNum(Math.abs(surplus))}</span></div>
+    </div>
+    <!-- STATEMENT OF FINANCIAL POSITION -->
+    <div class="report-section">
+      <div class="report-section-title">STATEMENT OF FINANCIAL POSITION<br><small>As at: ${pLabel}</small></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>ASSETS</span><span></span></div>
+      <div class="report-row" style="font-weight:600"><span>Current Assets</span><span></span></div>
+      <div class="report-row indent"><span>Cash — KCB Main Account</span><span>${fmtNum(cashKCB)}</span></div>
+      <div class="report-row indent"><span>Cash — FIF Account</span><span>${fmtNum(cashFIF)}</span></div>
+      <div class="report-row indent"><span>Cash — NHIF/SHA Account</span><span>${fmtNum(cashNHIF)}</span></div>
+      <div class="report-row indent"><span>Petty Cash</span><span>${fmtNum(cashPetty)}</span></div>
+      ${ar?`<div class="report-row indent"><span>Accounts Receivable</span><span>${fmtNum(ar)}</span></div>`:''}
+      ${prepay?`<div class="report-row indent"><span>Prepayments</span><span>${fmtNum(prepay)}</span></div>`:''}
+      <div class="report-row subtotal"><span>Total Current Assets</span><span>${fmtNum(totCurrAssets)}</span></div>
+      <div class="report-row total"><span>TOTAL ASSETS</span><span>${fmtNum(totCurrAssets)}</span></div>
+      <div style="margin-top:12px"></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>LIABILITIES</span><span></span></div>
+      ${ap?`<div class="report-row indent"><span>Accounts Payable (Accrued Expenses)</span><span>${fmtNum(ap)}</span></div>`:'<div class="report-row indent"><span>Accounts Payable</span><span>—</span></div>'}
+      <div class="report-row subtotal"><span>Total Liabilities</span><span>${fmtNum(ap)}</span></div>
+      <div style="margin-top:12px"></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>NET ASSETS</span><span></span></div>
+      <div class="report-row indent"><span>Accumulated Surplus / Fund Balance</span><span>${fmtNum(netAssets-surplus)}</span></div>
+      <div class="report-row indent"><span>${surplus>=0?'Surplus':'Deficit'} for the Period</span><span>${fmtNum(surplus)}</span></div>
+      <div class="report-row total"><span>TOTAL NET ASSETS</span><span>${fmtNum(netAssets)}</span></div>
+      <div style="margin-top:12px"></div>
+      <div class="report-row" style="background:var(--g100);font-weight:700;font-size:12px;color:var(--navy)"><span>STATEMENT OF CASH FLOWS</span><span></span></div>
+      <div class="report-row" style="font-weight:600"><span>Operating Activities</span><span></span></div>
+      <div class="report-row indent"><span>Cash Receipts</span><span>${fmtNum(opReceipts)}</span></div>
+      <div class="report-row indent"><span>Cash Payments</span><span>(${fmtNum(opPayments)})</span></div>
+      <div class="report-row subtotal"><span>Net Cash from Operations</span><span>${fmtNum(netCF)}</span></div>
+      <div class="report-row total"><span>NET INCREASE IN CASH</span><span>${fmtNum(netCF)}</span></div>
+      <div class="report-row subtotal"><span>Opening Balance</span><span>—</span></div>
+      <div class="report-row subtotal"><span>Closing Balance</span><span>${fmtNum(totCash)}</span></div>
+    </div></div>
+    <div style="margin-top:20px;padding:12px;background:var(--g100);border-radius:6px;font-size:11px;color:var(--g500)">
+      <strong>IPSAS Compliance Note:</strong> These financial statements have been prepared on the accrual basis of accounting in accordance with International Public Sector Accounting Standards (IPSAS). Revenue is recognised when earned and expenditure when incurred, regardless of when cash is received or paid.
+    </div>`;
+}
+
+// ── SETTINGS ──
+async function loadSettings(){
+  const saved=JSON.parse(localStorage.getItem('lcrh_settings3')||'{}');
+  try{
+    const doc=await db.collection('settings').doc('hospital').get();
+    const s=doc.exists?{...saved,...doc.data()}:saved;
+    ['name','county','dept','fy','acct','icpak','ceo','chair'].forEach(k=>{
+      const el=document.getElementById('set-'+k);if(el)el.value=s[k]||el.value;
+    });
+  }catch(e){}
+}
+async function saveSettings(){
+  const s={hospitalName:document.getElementById('set-name').value,county:document.getElementById('set-county').value,dept:document.getElementById('set-dept').value,fy:'2026/2027',accountant:document.getElementById('set-acct').value,icpak:document.getElementById('set-icpak').value,ceo:document.getElementById('set-ceo').value,chairperson:document.getElementById('set-chair').value};
+  localStorage.setItem('lcrh_settings3',JSON.stringify(s));
+  try{await db.collection('settings').doc('hospital').set(s,{merge:true});toast('Settings saved')}
+  catch(e){toast('Settings saved locally','warn')}
+}
+async function loadUsers(){
+  try{const snap=await db.collection('users').get();
+    document.getElementById('users-list').innerHTML=snap.docs.map(d=>{const u=d.data();return`<tr><td>${u.name||''}</td><td>${u.email||''}</td><td>${u.role||''}</td><td>${(u.joined||'').substring(0,10)}</td></tr>`}).join('')||'<tr><td colspan="4" class="text-muted text-center">No users</td></tr>'
+  }catch(e){}
+}
+
+// ── AUDIT LOG ──
+async function writeAudit(action,collection,ref,data){
+  if(!db||!curUser)return;
+  try{await db.collection('auditLog').add({ts:new Date().toISOString(),uid:curUser.uid,user:userProfile?.name||curUser.email,role:userProfile?.role||'',action,collection,ref:ref||'',summary:JSON.stringify(data).substring(0,200)})}
+  catch(e){}
+}
+async function loadAuditLog(){
+  try{
+    const col=document.getElementById('al-col').value;
+    let q=db.collection('auditLog').orderBy('ts','desc').limit(200);
+    if(col)q=q.where('collection','==',col);
+    const snap=await q.get();
+    const aMap={CREATE:'badge-green',UPDATE:'badge-orange',DELETE:'badge-red'};
+    document.getElementById('al-body').innerHTML=snap.docs.map(d=>{const r=d.data();return`<tr>
+      <td style="font-size:11px">${(r.ts||'').replace('T',' ').substring(0,19)}</td>
+      <td>${r.user||''}</td><td>${r.role||''}</td>
+      <td><span class="badge ${aMap[r.action]||'badge-gray'}">${r.action||''}</span></td>
+      <td>${r.collection||''}</td><td>${r.ref||''}</td>
+      <td style="font-size:11px;color:var(--g500)">${(r.summary||'').substring(0,60)}</td>
+    </tr>`}).join('')||'<tr><td colspan="7" class="text-muted text-center" style="padding:24px">No audit records</td></tr>';
+  }catch(e){document.getElementById('al-body').innerHTML='<tr><td colspan="7" class="text-muted text-center">Error loading audit log</td></tr>'}
+}
+
+// ── CSV EXPORT ──
+function exportCSV(type){
+  let headers=[],rows=[];
+  if(type==='cb'){headers=['Date','Ref','Type','Description','IFMIS','Vote','Bank','Cheque','Payee','Amount'];rows=allCB.map(r=>[r.date,r.ref,r.type,r.description,r.ifmisCode||'',r.voteCategory||'',r.bank,r.chequeNo||'',r.payee,r.amount])}
+  if(type==='ve'){headers=['Date','LPO Ref','IFMIS','Vote Item','Description','Supplier','Status','Amount'];rows=allVE.map(r=>{const v=allVotes.find(x=>x.id===r.voteId);return[r.date,r.ref,v?.code||'',v?.name||'',r.description,r.supplier,r.status,r.amount]})}
+  if(type==='rev'){headers=['Date','Receipt No','Stream','Description','Payer','Bank','Amount'];rows=allRev.map(r=>[r.date,r.ref,r.stream,r.description,r.payer,r.bank,r.amount])}
+  if(type==='clm'){headers=['Date','Claim Ref','Insurer','Description','Claimed','Approved','Received','Status'];rows=allClm.map(r=>[r.date,r.ref,r.insurer,r.description,r.claimedAmount,r.approvedAmount,r.receivedAmount,r.status])}
+  if(type==='acc'){headers=['Date','Journal Ref','Type','Description','Debit Account','Credit Account','Period','Status','Amount'];rows=allAcc.map(r=>[r.date,r.ref,r.type,r.description,r.debitAccount,r.creditAccount,r.period,r.status,r.amount])}
+  const csv=[headers,...rows].map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='LCRH_'+type+'_'+new Date().toISOString().substring(0,10)+'.csv';a.click();
+}
+
+// ── SESSION TIMEOUT ──
+let _idleWarn,_idleKill,_idleCd,_cdSecs=120;
+function startIdleTimer(){
+  stopIdleTimer();
+  _idleWarn=setTimeout(showIdleWarning,28*60*1000);
+  ['mousemove','keydown','click','scroll','touchstart'].forEach(e=>document.addEventListener(e,resetIdleTimer,{passive:true,capture:true}));
+}
+function stopIdleTimer(){clearTimeout(_idleWarn);clearTimeout(_idleKill);clearInterval(_idleCd)}
+function showIdleWarning(){
+  _cdSecs=120;document.getElementById('session-cd').textContent='2:00';
+  document.getElementById('session-modal').classList.add('open');
+  _idleCd=setInterval(()=>{_cdSecs--;const m=Math.floor(_cdSecs/60),s=_cdSecs%60;document.getElementById('session-cd').textContent=m+':'+(s<10?'0':'')+s;if(_cdSecs<=0)clearInterval(_idleCd)},1000);
+  _idleKill=setTimeout(()=>{document.getElementById('session-modal').classList.remove('open');auth&&auth.signOut()},2*60*1000);
+}
+function resetIdleTimer(){
+  clearTimeout(_idleWarn);clearTimeout(_idleKill);clearInterval(_idleCd);
+  document.getElementById('session-modal').classList.remove('open');
+  _idleWarn=setTimeout(showIdleWarning,28*60*1000);
+}
+document.getElementById('session-stay-btn').addEventListener('click',resetIdleTimer);
+
+// ── BUTTON SETUP ──
+document.getElementById('cb-vt').addEventListener('change',function(){const v=allVotes.find(x=>x.id===this.value);document.getElementById('cb-ic').value=v?v.code:''});
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+</script>
+</body>
+</html>
