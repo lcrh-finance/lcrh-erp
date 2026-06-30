@@ -1931,8 +1931,13 @@ function resetIdleTimer(){
 document.getElementById('session-stay-btn').addEventListener('click',resetIdleTimer);
 
 // ── BUTTON SETUP ──
-document.getElementById('cb-vt').addEventListener('change',function(){const v=allVotes.find(x=>x.id===this.value);document.getElementById('cb-ic').value=v?v.code:''});
-document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')}));
+document.getElementById('cb-vt').addEventListener('change',function(){
+  const v=allVotes.find(x=>x.id===this.value);
+  document.getElementById('cb-ic').value=v?v.code:'';
+});
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){
+  if(e.target===this)this.classList.remove('open');
+}));
 </script>
 </body>
 </html>
