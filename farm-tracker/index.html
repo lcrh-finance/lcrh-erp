@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Farm Tracker</title>
+<style>
+:root{--bg:#f4f7f2;--card:#fff;--ink:#1d2b1f;--muted:#66756a;--line:#dfe6dc;--g:#2f7d32;--g2:#e5f2e4;--warn:#b26a00;--warnbg:#fff3dc;--bad:#b3261e;--badbg:#fde8e6;--blue:#1f5fa8}
+@media(prefers-color-scheme:dark){:root{--bg:#121a14;--card:#1b261e;--ink:#e6efe7;--muted:#9bb0a0;--line:#2c3b30;--g:#6cc36f;--g2:#223a25;--warn:#f0b04a;--warnbg:#3a2f16;--bad:#ff8a80;--badbg:#3d1f1c;--blue:#7db4f0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+header{background:var(--g);color:#fff;padding:14px 16px 0}
+@media(prefers-color-scheme:dark){header{background:#1f4d22}}
+header h1{margin:0 0 10px;font-size:20px}
+nav{display:flex;gap:4px;overflow-x:auto}
+nav button{background:transparent;color:#fff;border:0;padding:9px 14px;border-radius:8px 8px 0 0;font:inherit;cursor:pointer;white-space:nowrap;opacity:.85}
+nav button.on{background:var(--bg);color:var(--ink);opacity:1;font-weight:600}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+h2{margin:0 0 8px;font-size:17px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:22px}.stat span{color:var(--muted);font-size:13px}
+.pos{color:var(--g)}.neg{color:var(--bad)}.muted{color:var(--muted)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+td.act,td:first-child{white-space:nowrap}td.act{text-align:right}
+a{color:var(--blue)}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 11px;border-radius:8px}
+button.p{background:var(--g);color:#fff;border-color:var(--g)}
+@media(prefers-color-scheme:dark){button.p{color:#0c150d}}
+button.s{padding:3px 8px;font-size:13px}
+button.d{color:var(--bad)}
+input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);max-width:100%}
+label{display:block;margin-bottom:10px;font-size:13px;color:var(--muted)}
+label input,label select{display:block;width:100%;margin-top:3px;font-size:15px}
+.bar{height:9px;background:var(--line);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--g)}
+.bar.over i{background:var(--bad)}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;background:var(--g2);color:var(--g)}
+.tag.warn{background:var(--warnbg);color:var(--warn)}.tag.bad{background:var(--badbg);color:var(--bad)}
+tr.done td{color:var(--muted)}tr.done td:nth-child(2){text-decoration:line-through}
+tr.low td{background:var(--warnbg)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:18px;width:min(420px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.out{background:var(--g2);border-radius:8px;padding:10px 12px;margin-top:8px;min-height:20px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 <span id="farmName">Farm Tracker</span></h1>
+  <nav id="nav"></nav>
+</header>
+<main id="view"></main>
+
+<dialog id="dlg">
+  <form id="frm">
+    <h2 id="dtitle"></h2>
+    <div id="fields"></div>
+    <div class="row" style="justify-content:flex-end;margin:0">
+      <button type="button" onclick="dlg.close()">Cancel</button>
+      <button class="p" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const KEY = 'farmTrackerV1';
+const PHASES = ['Pre-planting','Planting','Maintenance','Harvesting','Post-harvest'];
+const STATUS = ['Pending','In Progress','Completed'];
+const CATS = ['Tools','Seeds','Fertilizers','Pesticides','Equipment'];
+const TYPES = ['Capital','Operating','Income'];
+const CROPS = { // spacing/row in inches, water inches/week, days to maturity, lb N per 1000 sq ft per season
+  tomato:{sp:24,row:36,water:1.5,days:80,n:1.5}, lettuce:{sp:8,row:12,water:1,days:50,n:1},
+  bean:{sp:4,row:24,water:1,days:55,n:.5}, carrot:{sp:2,row:12,water:1,days:70,n:1},
+  pepper:{sp:18,row:30,water:1.25,days:75,n:1.5}, squash:{sp:36,row:48,water:1.5,days:55,n:1.5},
+  potato:{sp:12,row:30,water:1.25,days:100,n:2}, maize:{sp:12,row:30,water:1.25,days:90,n:2},
+  kale:{sp:12,row:18,water:1,days:55,n:1.5}, onion:{sp:4,row:12,water:1,days:100,n:1}
+};
+const today = () => new Date().toISOString().slice(0,10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const dlg = document.getElementById('dlg');
+const $ = s => document.querySelector(s);
+
+function sample(){
+  const y = new Date().getFullYear(), d = (m,dd) => `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  const t = (date,phase,task,status,notes='') => ({id:uid(),date,phase,task,status,notes});
+  const i = (cat,name,qty,low,date,cost,loc,notes='') => ({id:uid(),cat,name,qty,low,date,cost,loc,notes});
+  const l = (date,type,desc,amount,notes='') => ({id:uid(),date,type,desc,amount,notes});
+  return {
+    meta:{farm:'My Farm', currency:'$', sample:true},
+    budget:{capital:950, operating:590, revenue:430},
+    tasks:[
+      t(d(2,15),'Pre-planting','Walk the site, sketch the plot layout, note sun/shade','Completed','Back corner is shaded after 3pm'),
+      t(d(2,22),'Pre-planting','Send soil sample to the local extension office','Completed'),
+      t(d(3,15),'Pre-planting','Build 4 raised beds (4ft x 8ft)','In Progress','Need lumber + screws'),
+      t(d(4,5),'Planting','Sow lettuce and carrots','Pending'),
+      t(d(4,28),'Planting','Transplant tomato seedlings','Pending','24in spacing, add stakes'),
+      t(d(5,25),'Maintenance','First side-dress fertilizer on tomatoes','Pending'),
+      t(d(6,15),'Maintenance','Prune tomato suckers and tie to stakes','Pending'),
+      t(d(7,25),'Harvesting','Begin tomato harvest','Pending','Weigh each harvest'),
+      t(d(10,15),'Post-harvest','Pull spent plants, compost healthy debris','Pending'),
+      t(d(11,20),'Post-harvest','Review finances and write lessons learned','Pending')
+    ],
+    items:[
+      i('Tools','Garden spade',1,0,d(2,10),24,'Shed - wall hook'),
+      i('Tools','Hand trowel',2,0,d(2,10),8.5,'Shed - bucket'),
+      i('Seeds',"Tomato 'Roma' seeds (packet)",1,1,d(1,20),3.5,'Seed box'),
+      i('Seeds','Bush bean seeds (packet)',1,1,d(1,20),3.25,'Seed box'),
+      i('Fertilizers','10-10-10 fertilizer (20 lb bag)',1,1,d(3,10),22,'Shed shelf','Keep dry'),
+      i('Fertilizers','Compost (bags)',8,3,d(3,10),7.5,'Beside beds'),
+      i('Pesticides','Neem oil spray (16 oz)',1,1,d(4,1),12,'Locked cabinet','Apply in the evening'),
+      i('Equipment','Hose (100 ft)',1,0,d(2,18),35,'Hose reel'),
+      i('Equipment','Drip irrigation kit',1,0,d(3,20),48,'Shed bin')
+    ],
+    ledger:[
+      l(d(1,20),'Operating','Seeds (4 packets)',12.73),
+      l(d(2,10),'Capital','Hand tools',142),
+      l(d(3,10),'Operating','Compost, fertilizer and lime',91),
+      l(d(7,25),'Income','Sold tomatoes to neighbor (5 lb)',15),
+      l(d(8,2),'Income','Eggs - 3 dozen',15)
+    ]
+  };
+}
+function load(){ try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){} return sample(); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ alert('This browser would not save your data. Use Backup > Export regularly.'); } }
+let S = load(), tab = 'dash', invCat = 'All';
+const money = n => { n = Number(n) || 0; return (n < 0 ? '−' : '') + (S.meta.currency||'$') + Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); };
+
+/* ---------- generic add/edit form ---------- */
+const ENT = {
+  tasks:{title:'task', def:()=>({date:today(),phase:PHASES[0],status:'Pending'}), fields:[
+    {k:'date',l:'Date',t:'date'},{k:'phase',l:'Phase',t:'select',o:PHASES},{k:'task',l:'Task',t:'text',req:1},
+    {k:'status',l:'Status',t:'select',o:STATUS},{k:'notes',l:'Notes',t:'text'}]},
+  items:{title:'inventory item', def:()=>({date:today(),cat:'Tools',qty:1,low:0,cost:0}), fields:[
+    {k:'cat',l:'Category',t:'select',o:CATS},{k:'name',l:'Item name',t:'text',req:1},{k:'qty',l:'Quantity',t:'number'},
+    {k:'low',l:'Warn me when quantity is at or below (0 = never)',t:'number'},{k:'date',l:'Purchase date',t:'date'},
+    {k:'cost',l:'Cost per item',t:'number'},{k:'loc',l:'Location / storage',t:'text'},{k:'notes',l:'Notes',t:'text'}]},
+  ledger:{title:'transaction', def:()=>({date:today(),type:'Operating',amount:0}), fields:[
+    {k:'date',l:'Date',t:'date'},{k:'type',l:'Type',t:'select',o:TYPES},{k:'desc',l:'Description',t:'text',req:1},
+    {k:'amount',l:'Amount (always positive)',t:'number',req:1},{k:'notes',l:'Notes',t:'text'}]}
+};
+let cur = null;
+function openForm(ent, id, preset){
+  const cfg = ENT[ent];
+  const rec = id ? S[ent].find(x => x.id === id) : Object.assign(cfg.def(), preset || {});
+  cur = {ent, id};
+  $('#dtitle').textContent = (id ? 'Edit ' : 'Add ') + cfg.title;
+  $('#fields').innerHTML = cfg.fields.map(f => `<label>${f.l}` + (f.t === 'select'
+    ? `<select name="${f.k}">${f.o.map(o => `<option ${o === rec[f.k] ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+    : `<input name="${f.k}" type="${f.t}" ${f.t === 'number' ? 'step="any" min="0"' : ''} ${f.req ? 'required' : ''} value="${esc(rec[f.k] ?? '')}">`) + `</label>`).join('');
+  dlg.showModal();
+}
+$('#frm').addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target), o = {};
+  ENT[cur.ent].fields.forEach(f => { const v = fd.get(f.k); o[f.k] = f.t === 'number' ? (v === '' ? 0 : Number(v)) : v; });
+  if(cur.id) Object.assign(S[cur.ent].find(x => x.id === cur.id), o); else S[cur.ent].push(Object.assign({id:uid()}, o));
+  S.meta.sample = false; save(); dlg.close(); render();
+});
+function del(ent, id){ if(confirm('Delete this entry?')){ S[ent] = S[ent].filter(x => x.id !== id); save(); render(); } }
+const btns = (ent, id) => `<button class="s" onclick="openForm('${ent}','${id}')">Edit</button> <button class="s d" onclick="del('${ent}','${id}')">Delete</button>`;
+function setStatus(id, v){ S.tasks.find(t => t.id === id).status = v; save(); render(); }
+
+/* ---------- finance maths ---------- */
+function fin(){
+  const sum = t => S.ledger.filter(l => l.type === t).reduce((a,l) => a + Number(l.amount||0), 0);
+  const cap = sum('Capital'), op = sum('Operating'), inc = sum('Income');
+  return {cap, op, inc, net: inc - op, netAll: inc - op - cap};
+}
+const cls = n => n >= 0 ? 'pos' : 'neg';
+function progress(spent, budget){
+  const p = budget > 0 ? Math.min(spent / budget * 100, 100) : 0;
+  return `<div class="bar ${spent > budget && budget > 0 ? 'over' : ''}"><i style="width:${p}%"></i></div>`;
+}
+const isLow = i => Number(i.low) > 0 && Number(i.qty) <= Number(i.low);
+
+/* ---------- views ---------- */
+const VIEWS = {
+  dash(){
+    const n = s => S.tasks.filter(t => t.status === s).length, total = S.tasks.length;
+    const pct = total ? Math.round(n('Completed') / total * 100) : 0;
+    const up = S.tasks.filter(t => t.status !== 'Completed').sort((a,b) => (a.date||'9').localeCompare(b.date||'9')).slice(0,6);
+    const low = S.items.filter(isLow), f = fin();
+    return `${S.meta.sample ? `<div class="card" style="background:var(--warnbg)"><b>You are looking at sample data.</b> Edit or delete the examples, or go to <a href="#" onclick="go('backup');return false">Backup &amp; Settings</a> and press <b>Start fresh</b>.</div>` : ''}
+    <div class="grid">
+      <div class="stat"><b>${n('Pending')}</b><span>Tasks pending</span></div>
+      <div class="stat"><b>${n('In Progress')}</b><span>In progress</span></div>
+      <div class="stat"><b>${n('Completed')}</b><span>Completed</span></div>
+      <div class="stat"><b class="${cls(f.netAll)}">${money(f.netAll)}</b><span>Net after capital</span></div>
+    </div>
+    <div class="card"><div class="row"><h2>Season progress</h2><span class="muted">${pct}% of tasks done</span></div>${progress(pct,100)}</div>
+    <div class="two">
+      <div class="card"><h2>Next tasks</h2>${up.length ? `<table><tbody>${up.map(t => `<tr><td>${esc(t.date)}</td><td>${esc(t.task)}<br><span class="muted">${t.phase}</span></td><td><span class="tag ${t.status === 'In Progress' ? 'warn' : ''}">${t.status}</span></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing left to do. 🎉</p>'}</div>
+      <div class="card"><h2>Running low</h2>${low.length ? `<table><tbody>${low.map(i => `<tr><td>${esc(i.name)}</td><td><span class="tag warn">${i.qty} left</span></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing is running low.</p>'}
+      <h2 style="margin-top:14px">Money</h2>
+      <table><tbody><tr><td>Income</td><td class="pos">${money(f.inc)}</td></tr><tr><td>Operating costs</td><td>${money(f.op)}</td></tr><tr><td>Capital spent</td><td>${money(f.cap)}</td></tr></tbody></table></div>
+    </div>`;
+  },
+  schedule(){
+    return PHASES.map(ph => {
+      const rows = S.tasks.filter(t => t.phase === ph).sort((a,b) => (a.date||'9').localeCompare(b.date||'9'));
+      return `<section class="card"><div class="row"><h2>${ph}</h2><button class="p" onclick="openForm('tasks',null,{phase:'${ph}'})">+ Add task</button></div>` +
+        (rows.length ? `<div class="tw"><table><thead><tr><th>Date</th><th>Task</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>` +
+        rows.map(t => `<tr class="${t.status === 'Completed' ? 'done' : ''}"><td>${esc(t.date)}</td><td>${esc(t.task)}</td>
+          <td><select onchange="setStatus('${t.id}',this.value)">${STATUS.map(s => `<option ${s === t.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+          <td>${esc(t.notes)}</td><td class="act">${btns('tasks', t.id)}</td></tr>`).join('') + `</tbody></table></div>` : '<p class="muted">No tasks in this phase yet.</p>') + `</section>`;
+    }).join('');
+  },
+  inventory(){
+    const list = S.items.filter(i => invCat === 'All' || i.cat === invCat).sort((a,b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
+    const value = S.items.reduce((a,i) => a + Number(i.qty) * Number(i.cost), 0);
+    return `<div class="card"><div class="row"><h2>Inventory <span class="muted" style="font-weight:400">· stock value ${money(value)}</span></h2>
+      <span><select onchange="invCat=this.value;render()">${['All',...CATS].map(c => `<option ${c === invCat ? 'selected' : ''}>${c}</option>`).join('')}</select>
+      <button class="p" onclick="openForm('items',null,{cat:'${invCat === 'All' ? 'Tools' : invCat}'})">+ Add item</button></span></div>
+      ${list.length ? `<div class="tw"><table><thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Bought</th><th>Cost each</th><th>Stored</th><th></th></tr></thead><tbody>` +
+      list.map(i => `<tr class="${isLow(i) ? 'low' : ''}"><td>${esc(i.name)}${i.notes ? `<br><span class="muted">${esc(i.notes)}</span>` : ''}</td><td>${i.cat}</td>
+        <td>${i.qty} ${isLow(i) ? '<span class="tag warn">low</span>' : ''}</td><td>${esc(i.date)}</td><td>${money(i.cost)}</td><td>${esc(i.loc)}</td><td class="act">${btns('items', i.id)}</td></tr>`).join('') + `</tbody></table></div>` : '<p class="muted">Nothing here yet.</p>'}</div>`;
+  },
+  finances(){
+    const f = fin(), B = S.budget;
+    const bi = (k, l) => `<label>${l}<input type="number" step="any" min="0" value="${B[k]}" onchange="S.budget.${k}=Number(this.value)||0;save();render()"></label>`;
+    const rows = S.ledger.slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    return `<div class="grid">
+      <div class="stat"><b class="pos">${money(f.inc)}</b><span>Income</span></div>
+      <div class="stat"><b>${money(f.op)}</b><span>Operating costs</span></div>
+      <div class="stat"><b>${money(f.cap)}</b><span>Capital spent</span></div>
+      <div class="stat"><b class="${cls(f.net)}">${money(f.net)}</b><span>Profit before capital</span></div>
+      <div class="stat"><b class="${cls(f.netAll)}">${money(f.netAll)}</b><span>Net after capital</span></div></div>
+    <div class="card"><h2>Budget vs actual</h2><div class="two">
+      <div>${bi('capital','Capital budget')}${progress(f.cap, B.capital)}<p class="muted">Spent ${money(f.cap)} of ${money(B.capital)}</p></div>
+      <div>${bi('operating','Operating budget')}${progress(f.op, B.operating)}<p class="muted">Spent ${money(f.op)} of ${money(B.operating)}</p></div>
+      <div>${bi('revenue','Expected revenue')}${progress(f.inc, B.revenue)}<p class="muted">Earned ${money(f.inc)} of ${money(B.revenue)}</p></div></div></div>
+    <div class="card"><div class="row"><h2>Ledger</h2><button class="p" onclick="openForm('ledger')">+ Add transaction</button></div>
+      ${rows.length ? `<div class="tw"><table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>` +
+      rows.map(r => `<tr><td>${esc(r.date)}</td><td><span class="tag ${r.type === 'Income' ? '' : r.type === 'Capital' ? 'warn' : 'bad'}">${r.type}</span></td><td>${esc(r.desc)}</td>
+        <td class="${r.type === 'Income' ? 'pos' : ''}">${r.type === 'Income' ? '+' : '−'}${money(r.amount)}</td><td class="act">${btns('ledger', r.id)}</td></tr>`).join('') + `</tbody></table></div>` : '<p class="muted">No transactions yet.</p>'}</div>`;
+  },
+  tools(){
+    const opts = Object.keys(CROPS).map(k => `<option value="${k}">${cap(k)}</option>`).join('');
+    return `<div class="two">
+      <div class="card"><h2>🌿 How many plants fit?</h2><label>Crop<select id="sp_crop">${opts}</select></label><label>Bed area (sq ft)<input id="sp_area" type="number" min="0" value="32"></label><div class="out" id="sp_out"></div></div>
+      <div class="card"><h2>💧 Weekly water</h2><label>Crop<select id="wt_crop">${opts}</select></label><label>Number of plants<input id="wt_n" type="number" min="0" value="12"></label><label>Rain this week (inches)<input id="wt_rain" type="number" min="0" step="any" value="0"></label><div class="out" id="wt_out"></div></div>
+      <div class="card"><h2>🧪 Fertilizer amount</h2><label>Crop<select id="fz_crop">${opts}</select></label><label>Fertilizer N-P-K (e.g. 10-10-10)<input id="fz_npk" value="10-10-10"></label><label>Area (sq ft)<input id="fz_area" type="number" min="0" value="200"></label><div class="out" id="fz_out"></div></div>
+      <div class="card"><h2>📆 Harvest date</h2><label>Crop<select id="hv_crop">${opts}</select></label><label>Sowing / planting date<input id="hv_date" type="date" value="${today()}"></label><div class="out" id="hv_out"></div>
+        <h2 style="margin-top:14px">❄️ Start seeds indoors</h2><label>Last frost date<input id="fr_date" type="date"></label><label>Weeks before last frost<input id="fr_wk" type="number" min="0" value="6"></label><div class="out" id="fr_out"></div></div>
+    </div><p class="muted">These are general beginner guidelines. Always check your seed packet and local advice.</p>`;
+  },
+  backup(){
+    return `<div class="card"><h2>Settings</h2><div class="two">
+      <label>Farm name<input value="${esc(S.meta.farm)}" onchange="S.meta.farm=this.value||'My Farm';save();render()"></label>
+      <label>Currency symbol<input maxlength="6" value="${esc(S.meta.currency)}" onchange="S.meta.currency=this.value;save();render()"></label></div></div>
+    <div class="card"><h2>Backup</h2><p class="muted">Your data is stored in <b>this browser on this computer</b>. Export a backup file regularly, and keep it somewhere safe (USB stick, email, Google Drive).</p>
+      <button class="p" onclick="exportData()">⬇ Export backup</button>
+      <label class="btn" style="display:inline-block;margin:0 0 0 6px;color:var(--ink)">⬆ Import backup<input type="file" accept=".json" hidden onchange="importData(this.files[0])"></label></div>
+    <div class="card"><h2>Reset</h2><button class="d" onclick="startFresh()">Start fresh (remove all sample data)</button>
+      <button onclick="if(confirm('Replace everything with the sample data?')){S=sample();save();render()}">Reload sample data</button></div>`;
+  }
+};
+const TABS = {dash:'Dashboard', schedule:'Schedule', inventory:'Inventory', finances:'Finances', tools:'Calculators', backup:'Backup & Settings'};
+
+function render(){
+  $('#farmName').textContent = S.meta.farm; document.title = S.meta.farm + ' · Farm Tracker';
+  $('#nav').innerHTML = Object.entries(TABS).map(([k,v]) => `<button class="${k === tab ? 'on' : ''}" onclick="go('${k}')">${v}</button>`).join('');
+  $('#view').innerHTML = VIEWS[tab]();
+  if(tab === 'tools') calc();
+}
+function go(t){ tab = t; render(); window.scrollTo(0,0); }
+
+/* ---------- calculators ---------- */
+const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); };
+function calc(){
+  const v = id => $('#' + id).value, num = id => Number(v(id)) || 0;
+  let c = CROPS[v('sp_crop')], per = c.sp * c.row / 144;
+  $('#sp_out').innerHTML = `${cap(v('sp_crop'))}: space plants ${c.sp} in apart, rows ${c.row} in apart.<br>Each plant needs about <b>${per.toFixed(2)} sq ft</b>, so <b>${Math.floor(num('sp_area') / per)} plants</b> fit.`;
+  c = CROPS[v('wt_crop')]; per = c.sp * c.row / 144;
+  const need = Math.max(c.water - num('wt_rain'), 0), area = num('wt_n') * per, gal = need * area * 0.623;
+  $('#wt_out').innerHTML = `Needs ~${c.water} in/week; rain covers ${num('wt_rain')} in.<br>Water <b>${need.toFixed(2)} in</b> over ~${area.toFixed(0)} sq ft = <b>${gal.toFixed(1)} gallons (${(gal * 3.785).toFixed(0)} litres)</b> per week.<br>Tip: 2 deep waterings a week beat daily sprinkles.`;
+  c = CROPS[v('fz_crop')];
+  const p = v('fz_npk').split('-').map(Number), N = p[0];
+  if(p.length !== 3 || !(N > 0)) $('#fz_out').textContent = 'Enter the three numbers from the bag, like 10-10-10.';
+  else { const nlb = c.n * num('fz_area') / 1000, prod = nlb / (N / 100);
+    $('#fz_out').innerHTML = `${cap(v('fz_crop'))} needs ~${c.n} lb nitrogen per 1,000 sq ft per season.<br>For ${num('fz_area')} sq ft apply about <b>${prod.toFixed(1)} lb (${(prod * 0.4536).toFixed(2)} kg)</b> of ${v('fz_npk')}, split into 2–3 feedings.`; }
+  c = CROPS[v('hv_crop')];
+  $('#hv_out').innerHTML = v('hv_date') ? `${cap(v('hv_crop'))} takes ~${c.days} days. Ready around <b>${addDays(v('hv_date'), c.days)}</b>.` : 'Pick a date.';
+  $('#fr_out').innerHTML = v('fr_date') ? `Start seeds indoors on <b>${addDays(v('fr_date'), -7 * num('fr_wk'))}</b>.` : 'Enter your last frost date.';
+}
+$('#view').addEventListener('input', () => { if(tab === 'tools') calc(); });
+
+/* ---------- backup ---------- */
+function exportData(){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], {type:'application/json'}));
+  a.download = `farm-backup-${today()}.json`; a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(file){
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = () => { try{
+      const d = JSON.parse(r.result);
+      if(!d.tasks || !d.items || !d.ledger || !d.budget || !d.meta) throw 0;
+      if(confirm('Replace your current data with this backup?')){ S = d; save(); render(); }
+    }catch(e){ alert('That file is not a valid farm backup.'); } };
+  r.readAsText(file);
+}
+function startFresh(){
+  if(!confirm('Remove ALL data and start with an empty tracker?')) return;
+  S = {meta:{farm:S.meta.farm, currency:S.meta.currency, sample:false}, budget:{capital:0,operating:0,revenue:0}, tasks:[], items:[], ledger:[]};
+  save(); go('dash');
+}
+render();
+</script>
+</body>
+</html>
